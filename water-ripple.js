@@ -1,8 +1,8 @@
 /**
  * Dynamic Fluid & Water Ripple Engine for Andrey Hong Portfolio
  * Features:
- * - DARK MODE: Tranquil, calm, still liquid glass water with 85% opacity (no turbulent ripples / "jangan beriak")
- * - LIGHT MODE: Elegant, sparkling crystal water ripples confined to the Header section (.nav)
+ * - HEADER (.nav): Gentle, silky interactive water ripples in BOTH Dark & Light modes (subtle & elegant / "jangan terlalu beriak")
+ * - HERO (.hero): Dark Mode calm still liquid glass water with 85% opacity
  */
 
 (function () {
@@ -15,7 +15,7 @@
   }
 
   /* ==========================================================================
-     1. SOUND GENERATOR (Subtle water drops for header clicks in Light Mode)
+     1. SOUND GENERATOR (Subtle water drops for header clicks)
      ========================================================================== */
   let audioCtx = null;
   let soundEnabled = false;
@@ -39,13 +39,13 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      const baseFreq = 440 + Math.random() * 180;
+      const baseFreq = 440 + Math.random() * 160;
       osc.type = 'sine';
       osc.frequency.setValueAtTime(baseFreq, now);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.8, now + 0.05);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.85, now + 0.14);
 
-      const vol = Math.min(0.08, 0.02 + intensity * 0.03);
+      const vol = Math.min(0.06, 0.015 + intensity * 0.025);
       gain.gain.setValueAtTime(vol, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
 
@@ -61,8 +61,8 @@
 
   /* ==========================================================================
      2. CANVASES SETUP
-     - heroCanvas: Dark Mode tranquil still water (85% opacity, zero wave ripples)
-     - navCanvas: Light Mode interactive water ripples confined to header (.nav)
+     - heroCanvas: Dark Mode tranquil still water (85% opacity, in .hero)
+     - navCanvas: Gentle interactive water ripples in Header (.nav) in BOTH modes
      ========================================================================== */
   let heroCanvas = null;
   let heroEl = null;
@@ -96,7 +96,7 @@
       heroEl.prepend(heroCanvas);
     }
 
-    // 2. Light Mode Header Water Canvas (in .nav)
+    // 2. Interactive Header Water Canvas (in .nav - Active in BOTH dark & light mode)
     if (navEl) {
       navEl.style.position = 'relative';
       navCanvas = document.createElement('canvas');
@@ -110,10 +110,9 @@
         height: 100%;
         pointer-events: none;
         z-index: 1;
-        mix-blend-mode: multiply;
         opacity: 0.75;
         transition: opacity 0.4s ease;
-        display: none;
+        display: block;
       `;
       navEl.prepend(navCanvas);
     }
@@ -143,8 +142,9 @@
         heroCanvas.style.opacity = '0.85';
       }
       if (navCanvas) {
-        navCanvas.style.display = dark ? 'none' : 'block';
-        navCanvas.style.opacity = '0.75';
+        navCanvas.style.display = 'block';
+        navCanvas.style.mixBlendMode = dark ? 'screen' : 'multiply';
+        navCanvas.style.opacity = dark ? '0.70' : '0.75';
       }
     }
 
@@ -156,8 +156,7 @@
     syncThemeElements();
 
     /* ==========================================================================
-       4. DARK MODE: CALM STILL WATER ENGINE (NO RIPPLES / "JANGAN BERIAK")
-       Glassy, smooth, serene surface with soft ambient crystalline sheen
+       4. DARK MODE: CALM STILL WATER ENGINE IN HERO (85% Opacity, Glassy)
        ========================================================================== */
     let glHero = null;
     let programHero = null;
@@ -172,7 +171,6 @@
       }
     `;
 
-    // Dark Mode Still Water Shader: Smooth organic ambient shimmer, ZERO wave ripples
     const fsDarkSrc = `
       #ifdef GL_FRAGMENT_PRECISION_HIGH
       precision highp float;
@@ -188,7 +186,7 @@
         float aspect = u_resolution.x / u_resolution.y;
         vec2 p = vec2(v_uv.x * aspect, v_uv.y);
 
-        // Calm, tranquil, smooth glassy liquid surface (no ripples)
+        // Calm, tranquil, smooth glassy liquid surface in hero
         float wave1 = sin(p.x * 1.6 + u_time * 0.22) * cos(p.y * 1.6 + u_time * 0.18) * 0.0022;
         float wave2 = sin(p.x * 2.8 - u_time * 0.15 + p.y * 1.4) * 0.0012;
         float h = wave1 + wave2;
@@ -215,7 +213,6 @@
         vec3 color = mix(limeAccent, waterWhite, spec * 0.65);
         color = mix(color, deepCyan, caustic * 0.25);
 
-        // 85% max opacity
         float alpha = clamp(spec * 1.2 + caustic * 0.45 + fresnel * 0.25 + abs(h) * 1.5, 0.0, 0.85);
         gl_FragColor = vec4(color, alpha);
       }
@@ -271,8 +268,8 @@
     }
 
     /* ==========================================================================
-       5. LIGHT MODE: HEADER WATER RIPPLE ENGINE (.nav)
-       Interactive, crystal fresh water ripples in the header
+       5. INTERACTIVE HEADER WATER RIPPLE ENGINE (.nav)
+       Active in BOTH Dark and Light Mode with subtle, silky ripples ("jangan terlalu beriak")
        ========================================================================== */
     const MAX_NAV_RIPPLES = 16;
     const navRipples = [];
@@ -285,7 +282,7 @@
     let lastNavY = null;
     let lastNavTime = 0;
 
-    function addNavRipple(x, y, intensity = 0.03, speed = 0.42, wavelength = 0.08) {
+    function addNavRipple(x, y, intensity = 0.015, speed = 0.32, wavelength = 0.08) {
       const now = performance.now() * 0.001;
       if (navRipples.length >= MAX_NAV_RIPPLES) {
         navRipples.shift();
@@ -294,16 +291,15 @@
         x: x,
         y: y,
         birth: now,
-        intensity: intensity,
+        intensity: Math.min(0.025, intensity), // Smooth, subtle amplitude
         speed: speed,
         wavelength: wavelength,
       });
     }
 
-    // Pointer move in Header (.nav)
+    // Pointer move in Header (.nav) in BOTH dark & light modes
     if (navEl) {
       navEl.addEventListener('pointermove', (e) => {
-        if (isDarkMode()) return; // Light mode only
         const rect = navEl.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -315,9 +311,12 @@
           const dist = Math.hypot(dx, dy);
           const dt = now - lastNavTime;
 
-          if (dist > 16 && dt > 0.03) {
-            const speed = Math.min(dist / (dt * 1000), 1.5);
-            addNavRipple(x, y, 0.025 + speed * 0.015, 0.4 + speed * 0.08);
+          // Gentle threshold: smooth and not overly turbulent ("jangan terlalu beriak")
+          if (dist > 22 && dt > 0.035) {
+            const speed = Math.min(dist / (dt * 1000), 1.4);
+            const intensity = 0.012 + speed * 0.008;
+            const waveSpeed = 0.28 + speed * 0.04;
+            addNavRipple(x, y, intensity, waveSpeed);
             lastNavX = x;
             lastNavY = y;
             lastNavTime = now;
@@ -326,18 +325,18 @@
           lastNavX = x;
           lastNavY = y;
           lastNavTime = now;
-          addNavRipple(x, y, 0.03, 0.42);
+          addNavRipple(x, y, 0.015, 0.3);
         }
       }, { passive: true });
 
       navEl.addEventListener('pointerdown', (e) => {
-        if (isDarkMode()) return;
         const rect = navEl.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         initAudio();
-        addNavRipple(x, y, 0.065, 0.48);
-        playWaterDropSound(0.7);
+        // Gentle click ripple
+        addNavRipple(x, y, 0.032, 0.35);
+        playWaterDropSound(0.5);
       }, { passive: true });
     }
 
@@ -361,7 +360,7 @@
         }
       }
 
-      // Nav Canvas (Light Mode Header)
+      // Nav Canvas (Header)
       if (navCanvas && navEl) {
         const rect = navEl.getBoundingClientRect();
         const w = Math.max(rect.width, 320);
@@ -383,10 +382,8 @@
       const dark = isDarkMode();
       const now = performance.now() * 0.001;
 
-      if (dark) {
-        // Dark Mode: Render calm still liquid water in .hero
-        if (!heroCanvas || heroCanvas.style.display === 'none') return;
-
+      // 1. Dark Mode: Render calm still liquid water in .hero
+      if (dark && heroCanvas && heroCanvas.style.display !== 'none') {
         if (glHero && programHero) {
           glHero.useProgram(programHero);
           glHero.uniform2f(uHeroResolution, heroCanvas.width, heroCanvas.height);
@@ -396,39 +393,50 @@
           glHero.clear(glHero.COLOR_BUFFER_BIT);
           glHero.drawArrays(glHero.TRIANGLES, 0, 6);
         }
-      } else {
-        // Light Mode: Render sparkling water ripples in header (.nav)
-        if (!navCanvas || !navCtx2d || navCanvas.style.display === 'none') return;
+      }
+
+      // 2. Interactive Header Water Ripples (.nav) - Active in BOTH Dark & Light Mode
+      if (navCanvas && navCtx2d && navCanvas.style.display !== 'none') {
         navCtx2d.clearRect(0, 0, navCanvas.width, navCanvas.height);
 
         while (navRipples.length > 0 && (now - navRipples[0].birth) > 2.2) {
           navRipples.shift();
         }
 
-        const navW = navCanvas.width / dpr;
-        navCtx2d.save();
-        navCtx2d.scale(dpr, dpr);
+        if (navRipples.length > 0) {
+          const navW = navCanvas.width / dpr;
+          navCtx2d.save();
+          navCtx2d.scale(dpr, dpr);
 
-        for (let i = 0; i < navRipples.length; i++) {
-          const r = navRipples[i];
-          const age = now - r.birth;
-          if (age < 0 || age > 2.2) continue;
+          for (let i = 0; i < navRipples.length; i++) {
+            const r = navRipples[i];
+            const age = now - r.birth;
+            if (age < 0 || age > 2.2) continue;
 
-          const currentR = age * r.speed * navW * 0.35;
-          const fade = Math.max(0, 1 - (age / 2.2));
+            const currentR = age * r.speed * navW * 0.32;
+            const fade = Math.pow(Math.max(0, 1 - (age / 2.2)), 1.3);
 
-          // Crystal aquatic turquoise ripple ring
-          navCtx2d.beginPath();
-          navCtx2d.arc(r.x, r.y, currentR, 0, Math.PI * 2);
-          navCtx2d.lineWidth = 1.6 + age * 2.2;
-          navCtx2d.strokeStyle = `rgba(32, 138, 120, ${fade * r.intensity * 4.2})`;
-          navCtx2d.shadowColor = 'rgba(60, 200, 175, 0.5)';
-          navCtx2d.shadowBlur = 8;
-          navCtx2d.stroke();
-          navCtx2d.shadowBlur = 0;
+            navCtx2d.beginPath();
+            navCtx2d.arc(r.x, r.y, currentR, 0, Math.PI * 2);
+            navCtx2d.lineWidth = 1.4 + age * 1.8;
+
+            if (dark) {
+              // Dark Mode Header: Subtle neon-lime / emerald crystalline shimmer
+              navCtx2d.strokeStyle = `rgba(212, 255, 95, ${fade * r.intensity * 3.2})`;
+              navCtx2d.shadowColor = 'rgba(212, 255, 95, 0.4)';
+              navCtx2d.shadowBlur = 6;
+            } else {
+              // Light Mode Header: Fresh aquatic turquoise / deep crystal sheen
+              navCtx2d.strokeStyle = `rgba(28, 138, 122, ${fade * r.intensity * 3.6})`;
+              navCtx2d.shadowColor = 'rgba(50, 190, 165, 0.35)';
+              navCtx2d.shadowBlur = 6;
+            }
+            navCtx2d.stroke();
+            navCtx2d.shadowBlur = 0;
+          }
+
+          navCtx2d.restore();
         }
-
-        navCtx2d.restore();
       }
     }
 
