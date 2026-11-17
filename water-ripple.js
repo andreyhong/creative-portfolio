@@ -1,7 +1,7 @@
 /**
  * Dynamic Fluid & Water Ripple Engine for Andrey Hong Portfolio
  * Features:
- * - HEADER (.nav): Gentle, silky interactive water ripples in BOTH Dark & Light modes (subtle & elegant / "jangan terlalu beriak")
+ * - HEADER (.nav): Clear, interactive water ripples & liquid light sheen on every cursor movement in BOTH Dark & Light modes
  * - HERO (.hero): Dark Mode calm still liquid glass water with 85% opacity
  */
 
@@ -62,7 +62,7 @@
   /* ==========================================================================
      2. CANVASES SETUP
      - heroCanvas: Dark Mode tranquil still water (85% opacity, in .hero)
-     - navCanvas: Gentle interactive water ripples in Header (.nav) in BOTH modes
+     - navCanvas: Clear interactive water ripples in Header (.nav) in BOTH modes
      ========================================================================== */
   let heroCanvas = null;
   let heroEl = null;
@@ -110,7 +110,7 @@
         height: 100%;
         pointer-events: none;
         z-index: 1;
-        opacity: 0.75;
+        opacity: 0.90;
         transition: opacity 0.4s ease;
         display: block;
       `;
@@ -144,7 +144,7 @@
       if (navCanvas) {
         navCanvas.style.display = 'block';
         navCanvas.style.mixBlendMode = dark ? 'screen' : 'multiply';
-        navCanvas.style.opacity = dark ? '0.70' : '0.75';
+        navCanvas.style.opacity = dark ? '0.85' : '0.90';
       }
     }
 
@@ -268,10 +268,10 @@
     }
 
     /* ==========================================================================
-       5. INTERACTIVE HEADER WATER RIPPLE ENGINE (.nav)
-       Active in BOTH Dark and Light Mode with subtle, silky ripples ("jangan terlalu beriak")
+       5. HIGHLY INTERACTIVE HEADER WATER RIPPLE ENGINE (.nav)
+       Triggers dynamic, clearly visible liquid waves every time cursor moves in header
        ========================================================================== */
-    const MAX_NAV_RIPPLES = 16;
+    const MAX_NAV_RIPPLES = 36;
     const navRipples = [];
     let navCtx2d = null;
     if (navCanvas) {
@@ -281,8 +281,11 @@
     let lastNavX = null;
     let lastNavY = null;
     let lastNavTime = 0;
+    let navMouseX = -100;
+    let navMouseY = -100;
+    let isHoveringNav = false;
 
-    function addNavRipple(x, y, intensity = 0.015, speed = 0.32, wavelength = 0.08) {
+    function addNavRipple(x, y, intensity = 0.65) {
       const now = performance.now() * 0.001;
       if (navRipples.length >= MAX_NAV_RIPPLES) {
         navRipples.shift();
@@ -291,19 +294,33 @@
         x: x,
         y: y,
         birth: now,
-        intensity: Math.min(0.025, intensity), // Smooth, subtle amplitude
-        speed: speed,
-        wavelength: wavelength,
+        speed: 46 + Math.random() * 14,
+        intensity: intensity,
       });
     }
 
     // Pointer move in Header (.nav) in BOTH dark & light modes
     if (navEl) {
+      navEl.addEventListener('pointerenter', () => {
+        isHoveringNav = true;
+      });
+
+      navEl.addEventListener('pointerleave', () => {
+        isHoveringNav = false;
+        navMouseX = -100;
+        navMouseY = -100;
+        lastNavX = null;
+        lastNavY = null;
+      });
+
       navEl.addEventListener('pointermove', (e) => {
         const rect = navEl.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const now = performance.now() * 0.001;
+        navMouseX = x;
+        navMouseY = y;
+        isHoveringNav = true;
 
         if (lastNavX !== null && lastNavY !== null) {
           const dx = x - lastNavX;
@@ -311,12 +328,9 @@
           const dist = Math.hypot(dx, dy);
           const dt = now - lastNavTime;
 
-          // Gentle threshold: smooth and not overly turbulent ("jangan terlalu beriak")
-          if (dist > 22 && dt > 0.035) {
-            const speed = Math.min(dist / (dt * 1000), 1.4);
-            const intensity = 0.012 + speed * 0.008;
-            const waveSpeed = 0.28 + speed * 0.04;
-            addNavRipple(x, y, intensity, waveSpeed);
+          // Responsive threshold: triggers ripples every time cursor moves in header!
+          if (dist > 7 && dt > 0.018) {
+            addNavRipple(x, y, 0.65);
             lastNavX = x;
             lastNavY = y;
             lastNavTime = now;
@@ -325,7 +339,7 @@
           lastNavX = x;
           lastNavY = y;
           lastNavTime = now;
-          addNavRipple(x, y, 0.015, 0.3);
+          addNavRipple(x, y, 0.75);
         }
       }, { passive: true });
 
@@ -334,8 +348,9 @@
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         initAudio();
-        // Gentle click ripple
-        addNavRipple(x, y, 0.032, 0.35);
+        // Crisp click splash in header
+        addNavRipple(x, y, 0.95);
+        setTimeout(() => addNavRipple(x, y, 0.7), 90);
         playWaterDropSound(0.5);
       }, { passive: true });
     }
@@ -395,48 +410,83 @@
         }
       }
 
-      // 2. Interactive Header Water Ripples (.nav) - Active in BOTH Dark & Light Mode
+      // 2. Clear, Visible Interactive Water Ripples in Header (.nav)
       if (navCanvas && navCtx2d && navCanvas.style.display !== 'none') {
         navCtx2d.clearRect(0, 0, navCanvas.width, navCanvas.height);
 
-        while (navRipples.length > 0 && (now - navRipples[0].birth) > 2.2) {
+        navCtx2d.save();
+        navCtx2d.scale(dpr, dpr);
+
+        // A. Real-time liquid light caustic glow tracking directly under the cursor
+        if (isHoveringNav && navMouseX > 0 && navMouseY > 0) {
+          const glowGrad = navCtx2d.createRadialGradient(
+            navMouseX, navMouseY, 0,
+            navMouseX, navMouseY, 36
+          );
+          if (dark) {
+            glowGrad.addColorStop(0, 'rgba(212, 255, 95, 0.38)');
+            glowGrad.addColorStop(0.5, 'rgba(100, 240, 210, 0.20)');
+            glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+          } else {
+            glowGrad.addColorStop(0, 'rgba(28, 160, 138, 0.32)');
+            glowGrad.addColorStop(0.5, 'rgba(50, 195, 170, 0.16)');
+            glowGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          }
+          navCtx2d.beginPath();
+          navCtx2d.arc(navMouseX, navMouseY, 36, 0, Math.PI * 2);
+          navCtx2d.fillStyle = glowGrad;
+          navCtx2d.fill();
+        }
+
+        // B. Clearly visible expanding water ripples
+        while (navRipples.length > 0 && (now - navRipples[0].birth) > 1.6) {
           navRipples.shift();
         }
 
-        if (navRipples.length > 0) {
-          const navW = navCanvas.width / dpr;
-          navCtx2d.save();
-          navCtx2d.scale(dpr, dpr);
+        for (let i = 0; i < navRipples.length; i++) {
+          const r = navRipples[i];
+          const age = now - r.birth;
+          if (age < 0 || age > 1.5) continue;
 
-          for (let i = 0; i < navRipples.length; i++) {
-            const r = navRipples[i];
-            const age = now - r.birth;
-            if (age < 0 || age > 2.2) continue;
+          const lifeProgress = age / 1.5;
+          const currentR = 5 + age * r.speed;
+          const fade = Math.pow(1 - lifeProgress, 1.25);
+          const alpha = fade * r.intensity;
 
-            const currentR = age * r.speed * navW * 0.32;
-            const fade = Math.pow(Math.max(0, 1 - (age / 2.2)), 1.3);
+          // Primary outer water wave crest
+          navCtx2d.beginPath();
+          navCtx2d.arc(r.x, r.y, currentR, 0, Math.PI * 2);
+          navCtx2d.lineWidth = 1.8 + lifeProgress * 1.6;
 
+          if (dark) {
+            // Dark Mode: Radiant neon-lime liquid ripple
+            navCtx2d.strokeStyle = `rgba(212, 255, 95, ${alpha * 0.78})`;
+            navCtx2d.shadowColor = 'rgba(212, 255, 95, 0.6)';
+            navCtx2d.shadowBlur = 8;
+          } else {
+            // Light Mode: Clear oceanic turquoise liquid ripple
+            navCtx2d.strokeStyle = `rgba(20, 140, 122, ${alpha * 0.78})`;
+            navCtx2d.shadowColor = 'rgba(32, 185, 160, 0.5)';
+            navCtx2d.shadowBlur = 8;
+          }
+          navCtx2d.stroke();
+          navCtx2d.shadowBlur = 0;
+
+          // Secondary subtle inner liquid wave echo
+          if (currentR > 12) {
             navCtx2d.beginPath();
-            navCtx2d.arc(r.x, r.y, currentR, 0, Math.PI * 2);
-            navCtx2d.lineWidth = 1.4 + age * 1.8;
-
+            navCtx2d.arc(r.x, r.y, currentR * 0.62, 0, Math.PI * 2);
+            navCtx2d.lineWidth = 1.2;
             if (dark) {
-              // Dark Mode Header: Subtle neon-lime / emerald crystalline shimmer
-              navCtx2d.strokeStyle = `rgba(212, 255, 95, ${fade * r.intensity * 3.2})`;
-              navCtx2d.shadowColor = 'rgba(212, 255, 95, 0.4)';
-              navCtx2d.shadowBlur = 6;
+              navCtx2d.strokeStyle = `rgba(130, 245, 220, ${alpha * 0.4})`;
             } else {
-              // Light Mode Header: Fresh aquatic turquoise / deep crystal sheen
-              navCtx2d.strokeStyle = `rgba(28, 138, 122, ${fade * r.intensity * 3.6})`;
-              navCtx2d.shadowColor = 'rgba(50, 190, 165, 0.35)';
-              navCtx2d.shadowBlur = 6;
+              navCtx2d.strokeStyle = `rgba(45, 180, 160, ${alpha * 0.4})`;
             }
             navCtx2d.stroke();
-            navCtx2d.shadowBlur = 0;
           }
-
-          navCtx2d.restore();
         }
+
+        navCtx2d.restore();
       }
     }
 
