@@ -1,8 +1,8 @@
 /**
- * Dynamic Fluid & Elemental Engine for Andrey Hong Portfolio
+ * Dynamic Elemental & VFX Engine for Andrey Hong Portfolio
  * Features:
- * - DARK MODE: Calm, tranquil, ultra-smooth water ripple & wave dynamics (soft & non-turbulent)
- * - LIGHT MODE: Vibrant, realistic Fire & Ember Flame particle system following the cursor
+ * - DARK MODE: Tranquil, ultra-smooth water ripple dynamics with 85% opacity (silky & crystalline)
+ * - LIGHT MODE: Cinematic Unreal Engine / Avatar Live Action Firebending CGI particle system following cursor
  */
 
 (function () {
@@ -39,7 +39,7 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      const baseFreq = 420 + Math.random() * 180;
+      const baseFreq = 430 + Math.random() * 160;
       osc.type = 'sine';
       osc.frequency.setValueAtTime(baseFreq, now);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.8, now + 0.05);
@@ -61,8 +61,8 @@
 
   /* ==========================================================================
      2. CANVASES SETUP
-     - waterCanvas: Confined to Hero for silky water ripples in Dark Mode
-     - fireCanvas: Fixed viewport canvas for fire following cursor in Light Mode
+     - waterCanvas: Confined to Hero for silky 85% opacity water ripples in Dark Mode
+     - fireCanvas: Full-viewport fixed canvas for cinematic CGI firebending in Light Mode
      ========================================================================== */
   let waterCanvas = null;
   let heroEl = null;
@@ -75,7 +75,7 @@
 
     heroEl.style.position = 'relative';
 
-    // 1. Water Canvas (Dark Mode)
+    // 1. Water Canvas (Dark Mode, 85% opacity)
     waterCanvas = document.createElement('canvas');
     waterCanvas.id = 'water-ripple-canvas';
     waterCanvas.setAttribute('aria-hidden', 'true');
@@ -88,12 +88,12 @@
       pointer-events: none;
       z-index: 1;
       mix-blend-mode: screen;
-      opacity: 0.65;
+      opacity: 0.85;
       transition: opacity 0.4s ease;
     `;
     heroEl.prepend(waterCanvas);
 
-    // 2. Fire Canvas (Light Mode)
+    // 2. Fire Canvas (Light Mode - Cinematic CGI Fire)
     fireCanvas = document.createElement('canvas');
     fireCanvas.id = 'fire-cursor-canvas';
     fireCanvas.setAttribute('aria-hidden', 'true');
@@ -132,6 +132,7 @@
       const dark = isDarkMode();
       if (waterCanvas) {
         waterCanvas.style.display = dark ? 'block' : 'none';
+        waterCanvas.style.opacity = '0.85';
       }
       if (fireCanvas) {
         fireCanvas.style.display = dark ? 'none' : 'block';
@@ -146,7 +147,7 @@
     syncThemeElements();
 
     /* ==========================================================================
-       4. DARK MODE: ULTRA-SMOOTH WATER RIPPLE ENGINE
+       4. DARK MODE: 85% OPACITY ULTRA-SMOOTH WATER ENGINE
        ========================================================================== */
     const MAX_RIPPLES = 24;
     const ripples = [];
@@ -189,8 +190,8 @@
         float h = 0.0;
         vec2 grad = vec2(0.0);
 
-        // Calm, gentle ambient surface shimmer (ultra smooth, tranquil)
-        float amb = sin(p.x * 2.2 + u_time * 0.35) * cos(p.y * 2.2 + u_time * 0.3) * 0.0016;
+        // Gentle ambient surface shimmer (ultra smooth, tranquil, organic)
+        float amb = sin(p.x * 2.2 + u_time * 0.35) * cos(p.y * 2.2 + u_time * 0.3) * 0.0018;
         h += amb;
 
         for (int i = 0; i < ${MAX_RIPPLES}; i++) {
@@ -208,7 +209,7 @@
           float waveFront = age * speed;
           float diff = d - waveFront;
 
-          // Wide Gaussian envelope: smooth, silky rolling wave, no harsh ripples
+          // Wide Gaussian envelope: smooth, silky rolling wave, no sharp wrinkles
           float width = 0.15 + age * 0.08;
           float envelope = exp(- (diff * diff) / (2.0 * width * width));
           float decay = exp(-age * 1.5) / (sqrt(d + 0.28));
@@ -222,24 +223,25 @@
           grad += dir * dWave;
         }
 
-        vec3 normal = normalize(vec3(-grad.x * 1.3, -grad.y * 1.3, 1.0));
+        vec3 normal = normalize(vec3(-grad.x * 1.4, -grad.y * 1.4, 1.0));
         vec3 lightDir = normalize(vec3(-0.35, 0.45, 0.82));
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
         vec3 halfDir = normalize(lightDir + viewDir);
 
-        // Soft, elegant specular sheen instead of sharp glare
-        float spec = pow(max(dot(normal, halfDir), 0.0), 16.0) * 0.45;
-        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.2) * 0.3;
-        float caustic = pow(abs(h) * 12.0, 1.1) * 0.32;
+        // Soft, elegant specular sheen with rich 85% opacity clarity
+        float spec = pow(max(dot(normal, halfDir), 0.0), 18.0) * 0.65;
+        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.2) * 0.35;
+        float caustic = pow(abs(h) * 14.0, 1.15) * 0.45;
 
         vec3 limeAccent = vec3(0.83, 1.0, 0.37);
         vec3 waterWhite = vec3(0.96, 0.99, 1.0);
-        vec3 deepCyan = vec3(0.15, 0.8, 0.75);
+        vec3 deepCyan = vec3(0.12, 0.82, 0.76);
 
-        vec3 color = mix(limeAccent, waterWhite, spec * 0.6);
-        color = mix(color, deepCyan, caustic * 0.2);
+        vec3 color = mix(limeAccent, waterWhite, spec * 0.65);
+        color = mix(color, deepCyan, caustic * 0.25);
 
-        float alpha = clamp(spec * 0.85 + caustic * 0.28 + fresnel * 0.15 + abs(h) * 0.85, 0.0, 0.45);
+        // Rich 85% maximum opacity
+        float alpha = clamp(spec * 1.25 + caustic * 0.45 + fresnel * 0.25 + abs(h) * 1.4, 0.0, 0.85);
         gl_FragColor = vec4(color, alpha);
       }
     `;
@@ -329,7 +331,7 @@
     window.addEventListener('resize', onResize, { passive: true });
     onResize();
 
-    function addRipple(localX, localY, intensity = 0.012, speed = 0.32, wavelength = 0.085) {
+    function addRipple(localX, localY, intensity = 0.016, speed = 0.32, wavelength = 0.085) {
       const now = performance.now() * 0.001;
       const uvX = localX / waterWidth;
       const uvY = 1.0 - (localY / waterHeight);
@@ -341,7 +343,7 @@
         screenX: localX,
         screenY: localY,
         birth: now,
-        intensity: Math.min(0.025, intensity), // Smooth, soft amplitude
+        intensity: Math.min(0.035, intensity),
         speed: speed,
         wavelength: wavelength,
       });
@@ -373,35 +375,91 @@
     }
 
     /* ==========================================================================
-       5. LIGHT MODE: FIRE & EMBER CURSOR TRAIL ENGINE
+       5. LIGHT MODE: UNREAL ENGINE / AVATAR LIVE ACTION FIREBENDING CGI ENGINE
+       Features:
+       - Multi-tier volumetric flame body with blackbody plasma curve
+       - Turbulent vortex swirl & curl physics
+       - Motion-blurred streaking embers & directional needle sparks
+       - Atmospheric incandescent heat glow bloom
+       - Continuous arc gesture trailing with stroke interpolation
        ========================================================================== */
     const fireParticles = [];
-    const MAX_FIRE_PARTICLES = 160;
+    const MAX_FIRE_PARTICLES = 220;
     let mouseX = -100;
     let mouseY = -100;
     let prevMouseX = -100;
     let prevMouseY = -100;
     let lastSpawnTime = 0;
 
-    function spawnFireParticles(x, y, count = 3, spread = 6) {
-      for (let i = 0; i < count; i++) {
-        if (fireParticles.length >= MAX_FIRE_PARTICLES) {
-          fireParticles.shift();
-        }
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * spread;
-        const isSpark = Math.random() < 0.28;
+    function spawnCgiFireParticle(x, y, vx, vy, type = 'flame') {
+      if (fireParticles.length >= MAX_FIRE_PARTICLES) {
+        fireParticles.shift();
+      }
 
+      if (type === 'spark') {
+        // High-velocity streaking CGI ember
         fireParticles.push({
-          x: x + Math.cos(angle) * speed,
-          y: y + Math.sin(angle) * speed,
-          vx: (Math.random() - 0.5) * (isSpark ? 3.5 : 1.8),
-          vy: -Math.random() * (isSpark ? 5.5 : 3.8) - 1.2, // Buoyant upward lift
+          type: 'spark',
+          x: x,
+          y: y,
+          vx: vx,
+          vy: vy,
           life: 1.0,
-          decay: isSpark ? 0.018 + Math.random() * 0.02 : 0.024 + Math.random() * 0.03,
-          size: isSpark ? 1.5 + Math.random() * 2 : 12 + Math.random() * 16,
-          isSpark: isSpark
+          decay: 0.016 + Math.random() * 0.024,
+          size: 1.6 + Math.random() * 2.2,
+          color: Math.random() < 0.6 ? '#ffe478' : '#ff7a18'
         });
+      } else if (type === 'core') {
+        // Blazing white-hot plasma tongue
+        fireParticles.push({
+          type: 'core',
+          x: x,
+          y: y,
+          vx: vx * 0.4 + (Math.random() - 0.5) * 0.8,
+          vy: vy * 0.5 - Math.random() * 2.5 - 1.0,
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.15,
+          life: 1.0,
+          decay: 0.035 + Math.random() * 0.035,
+          size: 9 + Math.random() * 12,
+        });
+      } else {
+        // Volumetric swirling flame body
+        const angle = Math.random() * Math.PI * 2;
+        const radialSpeed = Math.random() * 2.2;
+        fireParticles.push({
+          type: 'flame',
+          x: x + Math.cos(angle) * radialSpeed,
+          y: y + Math.sin(angle) * radialSpeed,
+          vx: vx * 0.55 + (Math.random() - 0.5) * 2.0,
+          vy: vy * 0.6 - Math.random() * 3.8 - 1.8, // Buoyant upward flame surge
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.12,
+          scaleX: 0.8 + Math.random() * 0.5,
+          scaleY: 1.1 + Math.random() * 0.6, // Elongated flame tongue
+          life: 1.0,
+          decay: 0.022 + Math.random() * 0.026,
+          size: 16 + Math.random() * 22,
+        });
+      }
+    }
+
+    function firebendMotionBurst(x, y, dx, dy, count = 3) {
+      // 1. Core plasma at touchpoint
+      spawnCgiFireParticle(x, y, dx * 0.2, dy * 0.2, 'core');
+
+      // 2. Swirling flame tongues
+      for (let i = 0; i < count; i++) {
+        spawnCgiFireParticle(x, y, dx * 0.15, dy * 0.15, 'flame');
+      }
+
+      // 3. Streaking directional embers (motion blurred needles)
+      if (Math.random() < 0.65) {
+        const sparkSpeed = 3.5 + Math.random() * 5.0;
+        const sparkAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.2;
+        const svx = Math.cos(sparkAngle) * sparkSpeed + (Math.random() - 0.5) * 2.5;
+        const svy = Math.sin(sparkAngle) * sparkSpeed - Math.random() * 4.0;
+        spawnCgiFireParticle(x, y, svx, svy, 'spark');
       }
     }
 
@@ -426,9 +484,9 @@
           const dist = Math.hypot(dx, dy);
           const dt = now - lastTime;
 
-          if (dist > 22 && dt > 0.03) {
-            const speed = Math.min(dist / (dt * 1000), 1.5);
-            const intensity = 0.008 + speed * 0.006;
+          if (dist > 20 && dt > 0.028) {
+            const speed = Math.min(dist / (dt * 1000), 1.6);
+            const intensity = 0.012 + speed * 0.008;
             const waveSpeed = 0.28 + speed * 0.05;
             const wavelength = 0.085 + Math.random() * 0.015;
 
@@ -444,18 +502,28 @@
           lastX = x;
           lastY = y;
           lastTime = now;
-          addRipple(x, y, 0.012, 0.3, 0.085);
+          addRipple(x, y, 0.016, 0.3, 0.085);
         }
         resetIdleTimer();
       } else {
-        // Light Mode: fire following cursor
-        const dist = Math.hypot(mouseX - prevMouseX, mouseY - prevMouseY);
-        if (dist > 4) {
-          const count = Math.min(7, Math.floor(dist * 0.35) + 2);
-          spawnFireParticles(mouseX, mouseY, count, 8);
-          prevMouseX = mouseX;
-          prevMouseY = mouseY;
+        // Light Mode: Firebending gesture stream following cursor
+        if (prevMouseX > 0 && prevMouseY > 0) {
+          const dx = mouseX - prevMouseX;
+          const dy = mouseY - prevMouseY;
+          const dist = Math.hypot(dx, dy);
+
+          // Interpolate steps along stroke trajectory for continuous seamless flame stream
+          const steps = Math.max(1, Math.min(10, Math.floor(dist / 8)));
+          for (let s = 1; s <= steps; s++) {
+            const interX = prevMouseX + dx * (s / steps);
+            const interY = prevMouseY + dy * (s / steps);
+            firebendMotionBurst(interX, interY, dx, dy, Math.max(1, Math.floor(steps * 0.4)));
+          }
+        } else {
+          firebendMotionBurst(mouseX, mouseY, 0, 0, 4);
         }
+        prevMouseX = mouseX;
+        prevMouseY = mouseY;
       }
     }, { passive: true });
 
@@ -465,12 +533,21 @@
         const coords = getHeroCoordinates(e);
         if (!coords) return;
         initAudio();
-        addRipple(coords.x, coords.y, 0.035, 0.35, 0.085);
-        playWaterDropSound(0.6);
+        addRipple(coords.x, coords.y, 0.045, 0.36, 0.085);
+        playWaterDropSound(0.7);
         resetIdleTimer();
       } else {
-        // Burst of flame sparks on click in light mode
-        spawnFireParticles(e.clientX, e.clientY, 16, 14);
+        // Avatar Firebending Strike: Explosive radial shockwave burst
+        const cx = e.clientX;
+        const cy = e.clientY;
+        for (let i = 0; i < 28; i++) {
+          const a = (i / 28) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+          const spd = 4.5 + Math.random() * 8.0;
+          spawnCgiFireParticle(cx, cy, Math.cos(a) * spd, Math.sin(a) * spd - 2.0, i % 2 === 0 ? 'spark' : 'flame');
+        }
+        for (let j = 0; j < 6; j++) {
+          spawnCgiFireParticle(cx, cy, (Math.random() - 0.5) * 2, -Math.random() * 3, 'core');
+        }
       }
     }, { passive: true });
 
@@ -486,7 +563,7 @@
 
       const rx = waterWidth * (0.2 + Math.random() * 0.6);
       const ry = waterHeight * (0.2 + Math.random() * 0.6);
-      addRipple(rx, ry, 0.015, 0.28, 0.09);
+      addRipple(rx, ry, 0.018, 0.28, 0.09);
       playWaterDropSound(0.25);
       idleTimer = setTimeout(triggerAmbientDrop, 6000 + Math.random() * 3500);
     }
@@ -502,7 +579,7 @@
       const dark = isDarkMode();
 
       if (dark) {
-        // Render Dark Mode Water
+        // Render Dark Mode Water (85% Opacity, Ultra-Smooth)
         if (!waterCanvas || waterCanvas.style.display === 'none') return;
         const now = performance.now() * 0.001;
 
@@ -551,32 +628,45 @@
 
             ctx2dWater.beginPath();
             ctx2dWater.arc(r.screenX, r.screenY, currentR, 0, Math.PI * 2);
-            ctx2dWater.lineWidth = 1.6 + age * 2.0;
-            ctx2dWater.strokeStyle = `rgba(212, 255, 95, ${fade * r.intensity * 2.8})`;
+            ctx2dWater.lineWidth = 1.8 + age * 2.2;
+            ctx2dWater.strokeStyle = `rgba(212, 255, 95, ${fade * r.intensity * 3.8})`;
             ctx2dWater.stroke();
           }
           ctx2dWater.restore();
         }
       } else {
-        // Render Light Mode Fire
+        // Render Light Mode CGI Firebending
         if (!fireCanvas || !fireCtx || fireCanvas.style.display === 'none') return;
         fireCtx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
 
         const now = performance.now();
-        // Gentle dancing flicker when cursor is hovering or still
-        if (mouseX > 0 && mouseY > 0 && (now - lastSpawnTime > 50)) {
-          spawnFireParticles(mouseX, mouseY, 2, 5);
+        // Constant living flame dance at cursor tip
+        if (mouseX > 0 && mouseY > 0 && (now - lastSpawnTime > 35)) {
+          firebendMotionBurst(mouseX, mouseY, 0, -1.5, 2);
           lastSpawnTime = now;
         }
 
         fireCtx.save();
         fireCtx.scale(dpr, dpr);
 
+        // Ambient radiant heat glow bloom at cursor
+        if (mouseX > 0 && mouseY > 0) {
+          const heatGlow = fireCtx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 55);
+          heatGlow.addColorStop(0, 'rgba(255, 180, 40, 0.28)');
+          heatGlow.addColorStop(0.4, 'rgba(255, 90, 10, 0.14)');
+          heatGlow.addColorStop(1, 'rgba(200, 20, 0, 0)');
+          fireCtx.beginPath();
+          fireCtx.arc(mouseX, mouseY, 55, 0, Math.PI * 2);
+          fireCtx.fillStyle = heatGlow;
+          fireCtx.fill();
+        }
+
+        // Render CGI Fire Particles with volumetric layering
         for (let i = fireParticles.length - 1; i >= 0; i--) {
           const p = fireParticles[i];
           p.x += p.vx;
           p.y += p.vy;
-          p.vy *= 0.98;
+          p.vy *= 0.975;
           p.vx *= 0.97;
           p.life -= p.decay;
 
@@ -585,34 +675,60 @@
             continue;
           }
 
-          const currentRadius = p.isSpark ? p.size : p.size * (0.4 + (1.0 - p.life) * 0.85);
-          const alpha = Math.min(1.0, p.life * 1.25);
+          const alpha = Math.min(1.0, p.life * 1.35);
 
-          if (p.isSpark) {
-            // Embers and flying sparks
+          if (p.type === 'spark') {
+            // High-speed streaking ember needle with motion trail
+            const tailX = p.x - p.vx * 2.6;
+            const tailY = p.y - p.vy * 2.6;
+
             fireCtx.beginPath();
-            fireCtx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
-            fireCtx.fillStyle = `rgba(255, ${Math.floor(160 + p.life * 90)}, 40, ${alpha})`;
-            fireCtx.shadowColor = '#ff6600';
-            fireCtx.shadowBlur = 5;
+            fireCtx.moveTo(p.x, p.y);
+            fireCtx.lineTo(tailX, tailY);
+            fireCtx.strokeStyle = p.color;
+            fireCtx.lineWidth = p.size * alpha;
+            fireCtx.lineCap = 'round';
+            fireCtx.shadowColor = '#ff5500';
+            fireCtx.shadowBlur = 6;
+            fireCtx.stroke();
+            fireCtx.shadowBlur = 0;
+          } else if (p.type === 'core') {
+            // Intense white-hot plasma tongue
+            const rad = p.size * (0.5 + (1.0 - p.life) * 0.7);
+            const coreGrad = fireCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(1, rad));
+            coreGrad.addColorStop(0, `rgba(255, 255, 245, ${alpha * 0.98})`);
+            coreGrad.addColorStop(0.35, `rgba(255, 235, 120, ${alpha * 0.9})`);
+            coreGrad.addColorStop(0.75, `rgba(255, 140, 20, ${alpha * 0.5})`);
+            coreGrad.addColorStop(1, 'rgba(220, 40, 0, 0)');
+
+            fireCtx.beginPath();
+            fireCtx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+            fireCtx.fillStyle = coreGrad;
             fireCtx.fill();
           } else {
-            // Realistic flame ball
-            const grad = fireCtx.createRadialGradient(
-              p.x, p.y, 0,
-              p.x, p.y, Math.max(1, currentRadius)
-            );
+            // Volumetric swirling flame body (Avatar CGI firebending look)
+            p.rot += p.rotSpeed;
+            const currentR = p.size * (0.35 + (1.0 - p.life) * 0.95);
 
-            // Rich warm fire gradient clearly visible on light backgrounds
-            grad.addColorStop(0, `rgba(255, 255, 180, ${alpha * 0.95})`);
-            grad.addColorStop(0.25, `rgba(255, 160, 20, ${alpha * 0.85})`);
-            grad.addColorStop(0.65, `rgba(230, 50, 10, ${alpha * 0.55})`);
-            grad.addColorStop(1, `rgba(140, 10, 0, 0)`);
+            fireCtx.save();
+            fireCtx.translate(p.x, p.y);
+            fireCtx.rotate(p.rot);
+            fireCtx.scale(p.scaleX, p.scaleY);
+
+            const flameGrad = fireCtx.createRadialGradient(0, 0, 0, 0, 0, Math.max(1, currentR));
+            // Blackbody thermal curve: White core -> Sun Gold -> Magma Orange -> Ruby Crimson -> Dissipation
+            flameGrad.addColorStop(0, `rgba(255, 255, 230, ${alpha * 0.96})`);
+            flameGrad.addColorStop(0.18, `rgba(255, 215, 30, ${alpha * 0.92})`);
+            flameGrad.addColorStop(0.48, `rgba(255, 95, 5, ${alpha * 0.82})`);
+            flameGrad.addColorStop(0.82, `rgba(205, 25, 0, ${alpha * 0.45})`);
+            flameGrad.addColorStop(1, 'rgba(80, 5, 0, 0)');
 
             fireCtx.beginPath();
-            fireCtx.arc(p.x, p.y, currentRadius, 0, Math.PI * 2);
-            fireCtx.fillStyle = grad;
+            fireCtx.arc(0, 0, currentR, 0, Math.PI * 2);
+            fireCtx.fillStyle = flameGrad;
             fireCtx.fill();
+
+            fireCtx.restore();
           }
         }
 
