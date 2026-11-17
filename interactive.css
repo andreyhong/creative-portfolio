@@ -1,0 +1,681 @@
+/* ==========================================================================
+   INTERACTIVE DYNAMICS & DIAGONAL SECTION STYLING (Andrey Hong Portfolio)
+   ========================================================================== */
+
+/* 0. Prevent Horizontal Overflow on Any Screen */
+html, body {
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
+/* 1. Top Liquid Scroll Progress Bar */
+.scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: transparent;
+  z-index: 1000;
+  pointer-events: none;
+}
+.scroll-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #9bc72c, #d4ff5f, #7df9ff);
+  box-shadow: 0 0 10px rgba(212, 255, 95, 0.7);
+  transition: width 0.08s ease-out;
+}
+
+/* 2. Fluid Custom Magnetic Cursor */
+@media (pointer: fine) {
+  body {
+    cursor: default;
+  }
+  a, button, .filter, .round-arrow, .project-art, .asset-tile, .video-item, .case-stats > div, .case-tiles > div {
+    cursor: pointer;
+  }
+  .custom-cursor-dot {
+    position: fixed;
+    top: -4px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent, #d4ff5f);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    box-shadow: 0 0 8px var(--accent, #d4ff5f);
+    transition: width 0.2s, height 0.2s, background-color 0.2s, opacity 0.2s;
+    will-change: transform;
+  }
+  .custom-cursor-ring {
+    position: fixed;
+    top: -22px;
+    left: -22px;
+    width: 44px;
+    height: 44px;
+    border: 1.5px solid rgba(212, 255, 95, 0.55);
+    background: rgba(212, 255, 95, 0.04);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 14px rgba(212, 255, 95, 0.15);
+    transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                height 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+                border-color 0.25s,
+                background-color 0.25s,
+                border-radius 0.25s;
+    will-change: transform;
+  }
+  .cursor-badge-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #101111;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+  }
+  .custom-cursor-ring.cursor-hover {
+    width: 62px;
+    height: 62px;
+    top: -31px;
+    left: -31px;
+    border-color: rgba(212, 255, 95, 0.85);
+    background: rgba(212, 255, 95, 0.12);
+    backdrop-filter: blur(2px);
+  }
+  .custom-cursor-ring.cursor-active {
+    width: 36px;
+    height: 36px;
+    top: -18px;
+    left: -18px;
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.25);
+  }
+  .custom-cursor-ring.cursor-badge-play,
+  .custom-cursor-ring.cursor-badge-view {
+    width: 82px;
+    height: 82px;
+    top: -41px;
+    left: -41px;
+    background: #d4ff5f;
+    border-color: #d4ff5f;
+    box-shadow: 0 0 25px rgba(212, 255, 95, 0.5);
+  }
+  .custom-cursor-ring.cursor-badge-play .cursor-badge-text,
+  .custom-cursor-ring.cursor-badge-view .cursor-badge-text {
+    opacity: 1;
+    transform: scale(1);
+    color: #0b0c0d;
+  }
+}
+@media (pointer: coarse) {
+  .custom-cursor-dot,
+  .custom-cursor-ring {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   3. SECTION DIAGONAL MIRING (Angled Cuts & Scroll-Driven Momentum Skew)
+   ========================================================================== */
+
+/* Marquee: dynamic diagonal rotation */
+.marquee {
+  transform: rotate(-1.6deg) scaleX(1.05);
+  margin: 35px -2.5% 0;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+  position: relative;
+  z-index: 5;
+}
+.marquee:hover > div {
+  animation-play-state: paused;
+}
+
+/* Featured Case Study: Bold diagonal slice at top and bottom */
+.case-section {
+  position: relative;
+  z-index: 6;
+  clip-path: polygon(0 3.8vw, 100% 0, 100% calc(100% - 3.8vw), 0 100%);
+  padding-top: calc(130px + 3.8vw) !important;
+  padding-bottom: calc(130px + 3.8vw) !important;
+  margin-top: -3.8vw;
+  margin-bottom: -3.8vw;
+  box-shadow: inset 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Asset Showcase: Alternating diagonal angle */
+.assets-showcase {
+  position: relative;
+  z-index: 7;
+  clip-path: polygon(0 0, 100% 3.5vw, 100% 100%, 0 calc(100% - 3.5vw));
+  padding-top: calc(130px + 3.5vw) !important;
+  padding-bottom: calc(130px + 3.5vw) !important;
+}
+
+/* About Me: Slanted high-contrast diagonal beige section */
+.about {
+  position: relative;
+  z-index: 8;
+  clip-path: polygon(0 4vw, 100% 0, 100% calc(100% - 4vw), 0 100%);
+  padding-top: calc(130px + 4vw) !important;
+  padding-bottom: calc(130px + 4vw) !important;
+  margin-top: -4vw;
+  margin-bottom: -4vw;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+/* Contact: Bold angled electric lime banner */
+.contact {
+  position: relative;
+  z-index: 9;
+  clip-path: polygon(0 4.2vw, 100% 0, 100% 100%, 0 100%);
+  padding-top: calc(120px + 4.2vw) !important;
+  margin-top: -4.2vw;
+  box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.45);
+}
+
+/* Dynamic scroll momentum skew: sections tilt diagonally when scrolling down */
+.projects,
+.case-tiles,
+.video-grid,
+.asset-grid,
+.experience {
+  transform: skewY(var(--scroll-skew, 0deg));
+  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+/* Responsive adjustment for diagonal cuts on smaller screens */
+@media (max-width: 768px) {
+  .case-section {
+    clip-path: polygon(0 5vw, 100% 0, 100% calc(100% - 5vw), 0 100%);
+    padding-top: calc(85px + 5vw) !important;
+    padding-bottom: calc(85px + 5vw) !important;
+    margin-top: -5vw;
+    margin-bottom: -5vw;
+  }
+  .assets-showcase {
+    clip-path: polygon(0 0, 100% 4.5vw, 100% 100%, 0 calc(100% - 4.5vw));
+    padding-top: calc(85px + 4.5vw) !important;
+    padding-bottom: calc(85px + 4.5vw) !important;
+  }
+  .about {
+    clip-path: polygon(0 5vw, 100% 0, 100% calc(100% - 5vw), 0 100%);
+    padding-top: calc(85px + 5vw) !important;
+    padding-bottom: calc(85px + 5vw) !important;
+    margin-top: -5vw;
+    margin-bottom: -5vw;
+  }
+  .contact {
+    clip-path: polygon(0 5.5vw, 100% 0, 100% 100%, 0 100%);
+    padding-top: calc(85px + 5.5vw) !important;
+    margin-top: -5.5vw;
+  }
+}
+
+/* ==========================================================================
+   4. KOTAK-KOTAK INTERAKTIF (Highly Interactive Boxes & Cards)
+   ========================================================================== */
+
+/* Project Boxes (.project-art) */
+.project-art {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.35s ease,
+              border-color 0.35s ease,
+              filter 0.35s ease;
+  cursor: pointer;
+}
+.project-art:hover {
+  transform: translateY(-8px) scale(1.015);
+  border-color: rgba(212, 255, 95, 0.45);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 30px rgba(212, 255, 95, 0.15);
+  filter: brightness(1.08);
+}
+.project-art:active {
+  transform: translateY(-4px) scale(0.99);
+}
+.project-art:hover .small-circle {
+  transform: scale(1.2) rotate(45deg);
+  background: var(--accent, #d4ff5f);
+  color: #101111;
+  border-color: var(--accent, #d4ff5f);
+  box-shadow: 0 0 18px rgba(212, 255, 95, 0.6);
+}
+.small-circle {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+              background 0.3s ease,
+              color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+/* Case Study Stats Boxes (.case-stats > div) - Now Interactive Glass Cards */
+.case-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  border: none !important;
+  padding: 34px 0 !important;
+}
+.case-stats > div {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.3s ease,
+              background 0.3s ease,
+              box-shadow 0.3s ease;
+}
+.case-stats > div::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+.case-stats > div:hover {
+  transform: translateY(-8px) scale(1.025);
+  background: rgba(212, 255, 95, 0.07);
+  border-color: var(--accent, #d4ff5f);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), 0 0 25px rgba(212, 255, 95, 0.18);
+}
+.case-stats > div:hover::before {
+  background: var(--accent, #d4ff5f);
+}
+.case-stats strong {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.3s ease;
+}
+.case-stats > div:hover strong {
+  transform: scale(1.08);
+  color: var(--accent, #d4ff5f);
+}
+.case-stats span {
+  transition: color 0.3s ease;
+}
+.case-stats > div:hover span {
+  color: #f1f0ea;
+}
+
+/* Case Study Format Tiles (.case-tiles > div) */
+.case-tiles > div {
+  background: #1f2222;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.3s ease,
+              background 0.3s ease,
+              box-shadow 0.35s ease;
+}
+.case-tiles > div:hover {
+  transform: translateY(-10px) scale(1.02);
+  background: #272c2c;
+  border-color: var(--accent, #d4ff5f);
+  box-shadow: 0 22px 55px rgba(0, 0, 0, 0.5), 0 0 28px rgba(212, 255, 95, 0.16);
+}
+.case-tiles > div:hover b {
+  color: var(--accent, #d4ff5f);
+  text-shadow: 0 0 12px var(--accent, #d4ff5f);
+  letter-spacing: 2px;
+}
+.case-tiles b {
+  transition: letter-spacing 0.3s ease, text-shadow 0.3s ease, color 0.3s ease;
+}
+
+/* Video Deliverables Boxes (.video-item) */
+.video-item {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              background 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.35s ease;
+  cursor: pointer;
+}
+.video-item:hover {
+  transform: translateY(-8px) scale(1.02);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(212, 255, 95, 0.4);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), 0 0 25px rgba(212, 255, 95, 0.12);
+}
+.video-thumb {
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.3s ease;
+}
+.video-item:hover .video-thumb {
+  border-color: var(--accent, #d4ff5f);
+}
+.video-thumb img {
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s ease;
+}
+.video-item:hover .video-thumb img {
+  transform: scale(1.08);
+  filter: brightness(1.12);
+}
+.video-item:hover strong {
+  color: var(--accent, #d4ff5f);
+}
+.video-item strong {
+  transition: color 0.25s ease;
+}
+.video-thumb b {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+.video-item:hover .video-thumb b {
+  transform: translate(-50%, -50%) scale(1.22);
+  box-shadow: 0 0 25px rgba(212, 255, 95, 0.8);
+}
+
+/* Asset Showcase Tiles (.asset-tile) */
+.asset-tile {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              background 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.35s ease;
+  cursor: pointer;
+}
+.asset-tile:hover {
+  transform: translateY(-8px) scale(1.02);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(212, 255, 95, 0.4);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45), 0 0 25px rgba(212, 255, 95, 0.12);
+}
+.asset-cover {
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.asset-tile:hover .asset-icon {
+  transform: scale(1.18) rotate(45deg);
+  box-shadow: 0 0 22px rgba(212, 255, 95, 0.7);
+}
+.asset-icon {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+}
+
+/* Experience Boxes (.experience > div) */
+.experience {
+  gap: 24px 65px !important;
+}
+.experience > div {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 34px 28px 40px !important;
+  transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+              border-color 0.3s ease,
+              background 0.3s ease,
+              box-shadow 0.35s ease;
+  cursor: pointer;
+}
+.experience > div:hover {
+  transform: translateY(-8px) scale(1.02);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--accent, #d4ff5f);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45), 0 0 25px rgba(212, 255, 95, 0.12);
+}
+.experience > div:hover h3 {
+  color: var(--accent, #d4ff5f);
+  transform: translateX(6px);
+}
+.experience h3 {
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Service Rows (.service-list > div) */
+.service-list > div {
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+              padding-left 0.3s ease,
+              background 0.3s ease,
+              border-color 0.3s ease;
+  position: relative;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 29px 16px !important;
+}
+.service-list > div:hover {
+  transform: translateX(8px);
+  padding-left: 24px !important;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--accent, #d4ff5f);
+}
+.service-list > div:hover .service-arrow {
+  transform: translate(6px, -4px) scale(1.2);
+  color: var(--accent, #d4ff5f);
+}
+.service-arrow {
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.25s ease;
+}
+
+/* Specular Glare Sheen inside cards */
+.specular-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: inherit;
+  z-index: 10;
+  mix-blend-mode: screen;
+  transition: opacity 0.35s ease;
+}
+html[data-theme="light"] .specular-glare {
+  mix-blend-mode: overlay;
+}
+
+/* 5. Interactive Video Editing Timeline Scrubber */
+.project-art.editing .timeline {
+  position: relative;
+  overflow: visible;
+  cursor: crosshair;
+  padding: 4px 0;
+}
+.timeline-playhead {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 3px;
+  background: var(--accent, #d4ff5f);
+  box-shadow: 0 0 12px var(--accent, #d4ff5f), 0 0 4px #ffffff;
+  border-radius: 2px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 10;
+  transition: opacity 0.2s ease;
+}
+.timeline-playhead::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  width: 11px;
+  height: 11px;
+  background: var(--accent, #d4ff5f);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent, #d4ff5f);
+}
+.project-art.editing .timeline div:not(.timeline-playhead) {
+  transform-origin: bottom center;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.18s ease;
+}
+
+/* 6. Fluid Filter Slider Pill */
+.filters {
+  position: relative;
+}
+.filter {
+  position: relative;
+  z-index: 2;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.filter.active {
+  background: transparent !important;
+  color: #101111 !important;
+  border-color: transparent !important;
+}
+.filter-sliding-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--accent, #d4ff5f);
+  border-radius: 99px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  box-shadow: 0 4px 16px rgba(212, 255, 95, 0.35);
+  transition: transform 0.32s cubic-bezier(0.25, 1, 0.5, 1),
+              width 0.32s cubic-bezier(0.25, 1, 0.5, 1),
+              height 0.32s cubic-bezier(0.25, 1, 0.5, 1),
+              opacity 0.2s ease;
+}
+
+/* 7. Sound Toggle Button in Header */
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 96px;
+  height: 39px;
+  border: 1px solid var(--line, #333537);
+  border-radius: 99px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--fg, #f1f0ea);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  margin-right: 14px;
+}
+.sound-toggle svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.sound-toggle .sound-text {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.sound-toggle:hover {
+  background: color-mix(in srgb, var(--fg, #fff) 8%, transparent);
+  border-color: var(--accent, #d4ff5f);
+}
+.sound-toggle.sound-active {
+  border-color: var(--accent, #d4ff5f);
+  color: var(--accent, #d4ff5f);
+  box-shadow: 0 0 12px rgba(212, 255, 95, 0.25);
+}
+@media (max-width: 850px) {
+  .sound-toggle {
+    min-width: 38px;
+    width: 38px;
+    padding: 0;
+    margin-right: 8px;
+  }
+  .sound-toggle .sound-text {
+    display: none;
+  }
+}
+
+/* 8. Glassmorphic Nav & Floating Elements */
+.nav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(11, 12, 13, 0.88);
+}
+html[data-theme="light"] .nav {
+  background: rgba(244, 244, 238, 0.9);
+}
+
+.hero h1 {
+  text-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+}
+
+.round-arrow {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+              background 0.25s ease,
+              color 0.25s ease,
+              box-shadow 0.25s ease;
+}
+.round-arrow:hover {
+  box-shadow: 0 8px 30px rgba(212, 255, 95, 0.4);
+}
+
+/* Island Rituals floating serum animation */
+@keyframes serumFloat {
+  0%, 100% {
+    transform: rotate(16deg) translateY(0px);
+  }
+  50% {
+    transform: rotate(17deg) translateY(-8px);
+  }
+}
+.serum-silhouette {
+  animation: serumFloat 4.5s ease-in-out infinite;
+}
+
+/* Howell ring gentle pulse */
+@keyframes ringPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 55px #1616160b, 0 0 0 110px #1616160a;
+  }
+  50% {
+    box-shadow: 0 0 0 65px #16161615, 0 0 0 125px #16161610;
+  }
+}
+.howell-ring {
+  animation: ringPulse 5s ease-in-out infinite;
+}
+
+/* Tool badges tactile hover */
+.tool-list span {
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
+}
+.tool-list span:hover {
+  transform: translateY(-4px) scale(1.08);
+  background: #151716;
+  color: #d4ff5f;
+  border-color: #d4ff5f;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
