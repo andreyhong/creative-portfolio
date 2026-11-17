@@ -159,6 +159,16 @@ html, body {
   animation-play-state: paused;
 }
 
+/* Header Water Canvas for Light Mode */
+.nav {
+  position: relative;
+  overflow: hidden;
+}
+.nav > *:not(#nav-water-canvas) {
+  position: relative;
+  z-index: 2;
+}
+
 /* Featured Case Study: Bold diagonal slice at top and bottom (pivots degrees dynamically on scroll) */
 .case-section {
   position: relative;

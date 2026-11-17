@@ -1,8 +1,8 @@
 /**
- * Dynamic Elemental & VFX Engine for Andrey Hong Portfolio
+ * Dynamic Fluid & Water Ripple Engine for Andrey Hong Portfolio
  * Features:
- * - DARK MODE: Tranquil, ultra-smooth water ripple dynamics with 85% opacity (silky & crystalline)
- * - LIGHT MODE: Cinematic Unreal Engine / Avatar Live Action Firebending CGI particle system following cursor
+ * - DARK MODE: Tranquil, calm, still liquid glass water with 85% opacity (no turbulent ripples / "jangan beriak")
+ * - LIGHT MODE: Elegant, sparkling crystal water ripples confined to the Header section (.nav)
  */
 
 (function () {
@@ -15,7 +15,7 @@
   }
 
   /* ==========================================================================
-     1. SOUND GENERATOR (Web Audio API - Active for subtle water drops in Dark Mode)
+     1. SOUND GENERATOR (Subtle water drops for header clicks in Light Mode)
      ========================================================================== */
   let audioCtx = null;
   let soundEnabled = false;
@@ -33,13 +33,13 @@
   }
 
   function playWaterDropSound(intensity = 0.5) {
-    if (!soundEnabled || !audioCtx || !isDarkMode()) return;
+    if (!soundEnabled || !audioCtx) return;
     try {
       const now = audioCtx.currentTime;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      const baseFreq = 430 + Math.random() * 160;
+      const baseFreq = 440 + Math.random() * 180;
       osc.type = 'sine';
       osc.frequency.setValueAtTime(baseFreq, now);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.8, now + 0.05);
@@ -61,67 +61,75 @@
 
   /* ==========================================================================
      2. CANVASES SETUP
-     - waterCanvas: Confined to Hero for silky 85% opacity water ripples in Dark Mode
-     - fireCanvas: Full-viewport fixed canvas for cinematic CGI firebending in Light Mode
+     - heroCanvas: Dark Mode tranquil still water (85% opacity, zero wave ripples)
+     - navCanvas: Light Mode interactive water ripples confined to header (.nav)
      ========================================================================== */
-  let waterCanvas = null;
+  let heroCanvas = null;
   let heroEl = null;
-  let fireCanvas = null;
-  let fireCtx = null;
+  let navCanvas = null;
+  let navEl = null;
 
   function initCanvases() {
     heroEl = document.querySelector('.hero');
-    if (!heroEl) return false;
+    navEl = document.querySelector('.nav');
 
-    heroEl.style.position = 'relative';
+    if (!heroEl && !navEl) return false;
 
-    // 1. Water Canvas (Dark Mode, 85% opacity)
-    waterCanvas = document.createElement('canvas');
-    waterCanvas.id = 'water-ripple-canvas';
-    waterCanvas.setAttribute('aria-hidden', 'true');
-    waterCanvas.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1;
-      mix-blend-mode: screen;
-      opacity: 0.85;
-      transition: opacity 0.4s ease;
-    `;
-    heroEl.prepend(waterCanvas);
+    // 1. Dark Mode Still Water Canvas (in .hero)
+    if (heroEl) {
+      heroEl.style.position = 'relative';
+      heroCanvas = document.createElement('canvas');
+      heroCanvas.id = 'hero-water-canvas';
+      heroCanvas.setAttribute('aria-hidden', 'true');
+      heroCanvas.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        mix-blend-mode: screen;
+        opacity: 0.85;
+        transition: opacity 0.4s ease;
+      `;
+      heroEl.prepend(heroCanvas);
+    }
 
-    // 2. Fire Canvas (Light Mode - Cinematic CGI Fire)
-    fireCanvas = document.createElement('canvas');
-    fireCanvas.id = 'fire-cursor-canvas';
-    fireCanvas.setAttribute('aria-hidden', 'true');
-    fireCanvas.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      pointer-events: none;
-      z-index: 99990;
-      display: none;
-    `;
-    document.body.appendChild(fireCanvas);
-    fireCtx = fireCanvas.getContext('2d');
+    // 2. Light Mode Header Water Canvas (in .nav)
+    if (navEl) {
+      navEl.style.position = 'relative';
+      navCanvas = document.createElement('canvas');
+      navCanvas.id = 'nav-water-canvas';
+      navCanvas.setAttribute('aria-hidden', 'true');
+      navCanvas.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        mix-blend-mode: multiply;
+        opacity: 0.75;
+        transition: opacity 0.4s ease;
+        display: none;
+      `;
+      navEl.prepend(navCanvas);
+    }
 
     return true;
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupElementalEngine);
+    document.addEventListener('DOMContentLoaded', setupWaterEngine);
   } else {
-    setupElementalEngine();
+    setupWaterEngine();
   }
 
-  function setupElementalEngine() {
+  function setupWaterEngine() {
     if (!initCanvases()) {
-      setTimeout(setupElementalEngine, 50);
+      setTimeout(setupWaterEngine, 50);
       return;
     }
 
@@ -130,12 +138,13 @@
        ========================================================================== */
     function syncThemeElements() {
       const dark = isDarkMode();
-      if (waterCanvas) {
-        waterCanvas.style.display = dark ? 'block' : 'none';
-        waterCanvas.style.opacity = '0.85';
+      if (heroCanvas) {
+        heroCanvas.style.display = dark ? 'block' : 'none';
+        heroCanvas.style.opacity = '0.85';
       }
-      if (fireCanvas) {
-        fireCanvas.style.display = dark ? 'none' : 'block';
+      if (navCanvas) {
+        navCanvas.style.display = dark ? 'none' : 'block';
+        navCanvas.style.opacity = '0.75';
       }
     }
 
@@ -147,20 +156,14 @@
     syncThemeElements();
 
     /* ==========================================================================
-       4. DARK MODE: 85% OPACITY ULTRA-SMOOTH WATER ENGINE
+       4. DARK MODE: CALM STILL WATER ENGINE (NO RIPPLES / "JANGAN BERIAK")
+       Glassy, smooth, serene surface with soft ambient crystalline sheen
        ========================================================================== */
-    const MAX_RIPPLES = 24;
-    const ripples = [];
-    let lastX = null;
-    let lastY = null;
-    let lastTime = 0;
-    let idleTimer = null;
+    let glHero = null;
+    let programHero = null;
+    let uHeroResolution, uHeroTime;
 
-    let gl = null;
-    let program = null;
-    let uResolution, uTime, uRipples, uRippleParams, uRippleCount;
-
-    const vertexSrc = `
+    const vsSrc = `
       attribute vec2 a_position;
       varying vec2 v_uv;
       void main() {
@@ -169,7 +172,8 @@
       }
     `;
 
-    const fragmentSrc = `
+    // Dark Mode Still Water Shader: Smooth organic ambient shimmer, ZERO wave ripples
+    const fsDarkSrc = `
       #ifdef GL_FRAGMENT_PRECISION_HIGH
       precision highp float;
       #else
@@ -179,59 +183,30 @@
       varying vec2 v_uv;
       uniform vec2 u_resolution;
       uniform float u_time;
-      uniform vec3 u_ripples[${MAX_RIPPLES}];
-      uniform vec3 u_rippleParams[${MAX_RIPPLES}];
-      uniform int u_rippleCount;
 
       void main() {
         float aspect = u_resolution.x / u_resolution.y;
         vec2 p = vec2(v_uv.x * aspect, v_uv.y);
 
-        float h = 0.0;
-        vec2 grad = vec2(0.0);
+        // Calm, tranquil, smooth glassy liquid surface (no ripples)
+        float wave1 = sin(p.x * 1.6 + u_time * 0.22) * cos(p.y * 1.6 + u_time * 0.18) * 0.0022;
+        float wave2 = sin(p.x * 2.8 - u_time * 0.15 + p.y * 1.4) * 0.0012;
+        float h = wave1 + wave2;
 
-        // Gentle ambient surface shimmer (ultra smooth, tranquil, organic)
-        float amb = sin(p.x * 2.2 + u_time * 0.35) * cos(p.y * 2.2 + u_time * 0.3) * 0.0018;
-        h += amb;
+        vec2 grad = vec2(
+          cos(p.x * 1.6 + u_time * 0.22) * 1.6 * cos(p.y * 1.6 + u_time * 0.18) * 0.0022,
+          -sin(p.x * 1.6 + u_time * 0.22) * sin(p.y * 1.6 + u_time * 0.18) * 1.6 * 0.0022
+        );
 
-        for (int i = 0; i < ${MAX_RIPPLES}; i++) {
-          if (i >= u_rippleCount) break;
-          vec2 c = vec2(u_ripples[i].x * aspect, u_ripples[i].y);
-          float birth = u_ripples[i].z;
-          float age = u_time - birth;
-          if (age < 0.0 || age > 2.6) continue;
-
-          float intensity = u_rippleParams[i].x;
-          float speed = u_rippleParams[i].y;
-          float wavelength = u_rippleParams[i].z;
-
-          float d = distance(p, c);
-          float waveFront = age * speed;
-          float diff = d - waveFront;
-
-          // Wide Gaussian envelope: smooth, silky rolling wave, no sharp wrinkles
-          float width = 0.15 + age * 0.08;
-          float envelope = exp(- (diff * diff) / (2.0 * width * width));
-          float decay = exp(-age * 1.5) / (sqrt(d + 0.28));
-
-          float k = 6.2831853 / wavelength;
-          float wave = sin(diff * k) * envelope * decay * intensity;
-          h += wave;
-
-          vec2 dir = (d > 0.0005) ? normalize(p - c) : vec2(0.0);
-          float dWave = cos(diff * k) * k * envelope * decay * intensity;
-          grad += dir * dWave;
-        }
-
-        vec3 normal = normalize(vec3(-grad.x * 1.4, -grad.y * 1.4, 1.0));
+        vec3 normal = normalize(vec3(-grad.x * 1.8, -grad.y * 1.8, 1.0));
         vec3 lightDir = normalize(vec3(-0.35, 0.45, 0.82));
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
         vec3 halfDir = normalize(lightDir + viewDir);
 
-        // Soft, elegant specular sheen with rich 85% opacity clarity
-        float spec = pow(max(dot(normal, halfDir), 0.0), 18.0) * 0.65;
+        // Soft, serene specular glints with 85% opacity clarity
+        float spec = pow(max(dot(normal, halfDir), 0.0), 16.0) * 0.65;
         float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.2) * 0.35;
-        float caustic = pow(abs(h) * 14.0, 1.15) * 0.45;
+        float caustic = pow(abs(h) * 18.0, 1.15) * 0.45;
 
         vec3 limeAccent = vec3(0.83, 1.0, 0.37);
         vec3 waterWhite = vec3(0.96, 0.99, 1.0);
@@ -240,499 +215,220 @@
         vec3 color = mix(limeAccent, waterWhite, spec * 0.65);
         color = mix(color, deepCyan, caustic * 0.25);
 
-        // Rich 85% maximum opacity
-        float alpha = clamp(spec * 1.25 + caustic * 0.45 + fresnel * 0.25 + abs(h) * 1.4, 0.0, 0.85);
+        // 85% max opacity
+        float alpha = clamp(spec * 1.2 + caustic * 0.45 + fresnel * 0.25 + abs(h) * 1.5, 0.0, 0.85);
         gl_FragColor = vec4(color, alpha);
       }
     `;
 
-    let useWebGL = false;
     try {
-      gl = waterCanvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: false });
-      if (gl) {
-        const compile = (type, src) => {
-          const s = gl.createShader(type);
-          gl.shaderSource(s, src);
-          gl.compileShader(s);
-          if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) return null;
-          return s;
-        };
+      if (heroCanvas) {
+        glHero = heroCanvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: false });
+        if (glHero) {
+          const compile = (type, src) => {
+            const s = glHero.createShader(type);
+            glHero.shaderSource(s, src);
+            glHero.compileShader(s);
+            if (!glHero.getShaderParameter(s, glHero.COMPILE_STATUS)) return null;
+            return s;
+          };
 
-        const vs = compile(gl.VERTEX_SHADER, vertexSrc);
-        const fs = compile(gl.FRAGMENT_SHADER, fragmentSrc);
+          const vs = compile(glHero.VERTEX_SHADER, vsSrc);
+          const fs = compile(glHero.FRAGMENT_SHADER, fsDarkSrc);
 
-        if (vs && fs) {
-          program = gl.createProgram();
-          gl.attachShader(program, vs);
-          gl.attachShader(program, fs);
-          gl.linkProgram(program);
+          if (vs && fs) {
+            programHero = glHero.createProgram();
+            glHero.attachShader(programHero, vs);
+            glHero.attachShader(programHero, fs);
+            glHero.linkProgram(programHero);
 
-          if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
-            useWebGL = true;
-            gl.useProgram(program);
+            if (glHero.getProgramParameter(programHero, glHero.LINK_STATUS)) {
+              glHero.useProgram(programHero);
 
-            const buffer = gl.createBuffer();
-            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-            gl.bufferData(
-              gl.ARRAY_BUFFER,
-              new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-              gl.STATIC_DRAW
-            );
+              const buffer = glHero.createBuffer();
+              glHero.bindBuffer(glHero.ARRAY_BUFFER, buffer);
+              glHero.bufferData(
+                glHero.ARRAY_BUFFER,
+                new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+                glHero.STATIC_DRAW
+              );
 
-            const aPos = gl.getAttribLocation(program, 'a_position');
-            gl.enableVertexAttribArray(aPos);
-            gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+              const aPos = glHero.getAttribLocation(programHero, 'a_position');
+              glHero.enableVertexAttribArray(aPos);
+              glHero.vertexAttribPointer(aPos, 2, glHero.FLOAT, false, 0, 0);
 
-            uResolution = gl.getUniformLocation(program, 'u_resolution');
-            uTime = gl.getUniformLocation(program, 'u_time');
-            uRipples = gl.getUniformLocation(program, 'u_ripples');
-            uRippleParams = gl.getUniformLocation(program, 'u_rippleParams');
-            uRippleCount = gl.getUniformLocation(program, 'u_rippleCount');
+              uHeroResolution = glHero.getUniformLocation(programHero, 'u_resolution');
+              uHeroTime = glHero.getUniformLocation(programHero, 'u_time');
 
-            gl.enable(gl.BLEND);
-            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+              glHero.enable(glHero.BLEND);
+              glHero.blendFunc(glHero.SRC_ALPHA, glHero.ONE_MINUS_SRC_ALPHA);
+            }
           }
         }
       }
-    } catch (err) {
-      useWebGL = false;
+    } catch (e) {
+      glHero = null;
     }
 
-    let ctx2dWater = null;
-    if (!useWebGL && waterCanvas) {
-      ctx2dWater = waterCanvas.getContext('2d');
+    /* ==========================================================================
+       5. LIGHT MODE: HEADER WATER RIPPLE ENGINE (.nav)
+       Interactive, crystal fresh water ripples in the header
+       ========================================================================== */
+    const MAX_NAV_RIPPLES = 16;
+    const navRipples = [];
+    let navCtx2d = null;
+    if (navCanvas) {
+      navCtx2d = navCanvas.getContext('2d');
     }
 
-    let waterWidth = 0;
-    let waterHeight = 0;
-    let dpr = 1;
+    let lastNavX = null;
+    let lastNavY = null;
+    let lastNavTime = 0;
 
-    function onResize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-      // Water canvas size (hero)
-      if (waterCanvas && heroEl) {
-        const rect = heroEl.getBoundingClientRect();
-        waterWidth = Math.max(rect.width, 320);
-        waterHeight = Math.max(rect.height, 400);
-        waterCanvas.width = Math.floor(waterWidth * dpr);
-        waterCanvas.height = Math.floor(waterHeight * dpr);
-        if (useWebGL && gl) {
-          gl.viewport(0, 0, waterCanvas.width, waterCanvas.height);
-        }
-      }
-
-      // Fire canvas size (viewport)
-      if (fireCanvas) {
-        fireCanvas.width = Math.floor(window.innerWidth * dpr);
-        fireCanvas.height = Math.floor(window.innerHeight * dpr);
-      }
-    }
-    window.addEventListener('resize', onResize, { passive: true });
-    onResize();
-
-    function addRipple(localX, localY, intensity = 0.016, speed = 0.32, wavelength = 0.085) {
+    function addNavRipple(x, y, intensity = 0.03, speed = 0.42, wavelength = 0.08) {
       const now = performance.now() * 0.001;
-      const uvX = localX / waterWidth;
-      const uvY = 1.0 - (localY / waterHeight);
-
-      if (ripples.length >= MAX_RIPPLES) ripples.shift();
-      ripples.push({
-        x: uvX,
-        y: uvY,
-        screenX: localX,
-        screenY: localY,
+      if (navRipples.length >= MAX_NAV_RIPPLES) {
+        navRipples.shift();
+      }
+      navRipples.push({
+        x: x,
+        y: y,
         birth: now,
-        intensity: Math.min(0.035, intensity),
+        intensity: intensity,
         speed: speed,
         wavelength: wavelength,
       });
     }
 
-    function getHeroCoordinates(e) {
-      if (!heroEl) return null;
-      const heroRect = heroEl.getBoundingClientRect();
-      const navEl = document.querySelector('.nav');
-      const navRect = navEl ? navEl.getBoundingClientRect() : null;
-
-      const clientX = e.clientX;
-      const clientY = e.clientY;
-
-      if (navRect && clientY >= navRect.top && clientY <= navRect.bottom && clientX >= navRect.left && clientX <= navRect.right) {
-        return {
-          x: clientX - heroRect.left,
-          y: Math.max(0, clientY - heroRect.top),
-        };
-      }
-
-      if (clientY >= heroRect.top && clientY <= heroRect.bottom && clientX >= heroRect.left && clientX <= heroRect.right) {
-        return {
-          x: clientX - heroRect.left,
-          y: clientY - heroRect.top,
-        };
-      }
-      return null;
-    }
-
-    /* ==========================================================================
-       5. LIGHT MODE: UNREAL ENGINE / AVATAR LIVE ACTION FIREBENDING CGI ENGINE
-       Features:
-       - Multi-tier volumetric flame body with blackbody plasma curve
-       - Turbulent vortex swirl & curl physics
-       - Motion-blurred streaking embers & directional needle sparks
-       - Atmospheric incandescent heat glow bloom
-       - Continuous arc gesture trailing with stroke interpolation
-       ========================================================================== */
-    const fireParticles = [];
-    const MAX_FIRE_PARTICLES = 220;
-    let mouseX = -100;
-    let mouseY = -100;
-    let prevMouseX = -100;
-    let prevMouseY = -100;
-    let lastSpawnTime = 0;
-
-    function spawnCgiFireParticle(x, y, vx, vy, type = 'flame') {
-      if (fireParticles.length >= MAX_FIRE_PARTICLES) {
-        fireParticles.shift();
-      }
-
-      if (type === 'spark') {
-        // High-velocity streaking CGI ember
-        fireParticles.push({
-          type: 'spark',
-          x: x,
-          y: y,
-          vx: vx,
-          vy: vy,
-          life: 1.0,
-          decay: 0.016 + Math.random() * 0.024,
-          size: 1.6 + Math.random() * 2.2,
-          color: Math.random() < 0.6 ? '#ffe478' : '#ff7a18'
-        });
-      } else if (type === 'core') {
-        // Blazing white-hot plasma tongue
-        fireParticles.push({
-          type: 'core',
-          x: x,
-          y: y,
-          vx: vx * 0.4 + (Math.random() - 0.5) * 0.8,
-          vy: vy * 0.5 - Math.random() * 2.5 - 1.0,
-          rot: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() - 0.5) * 0.15,
-          life: 1.0,
-          decay: 0.035 + Math.random() * 0.035,
-          size: 9 + Math.random() * 12,
-        });
-      } else {
-        // Volumetric swirling flame body
-        const angle = Math.random() * Math.PI * 2;
-        const radialSpeed = Math.random() * 2.2;
-        fireParticles.push({
-          type: 'flame',
-          x: x + Math.cos(angle) * radialSpeed,
-          y: y + Math.sin(angle) * radialSpeed,
-          vx: vx * 0.55 + (Math.random() - 0.5) * 2.0,
-          vy: vy * 0.6 - Math.random() * 3.8 - 1.8, // Buoyant upward flame surge
-          rot: Math.random() * Math.PI * 2,
-          rotSpeed: (Math.random() - 0.5) * 0.12,
-          scaleX: 0.8 + Math.random() * 0.5,
-          scaleY: 1.1 + Math.random() * 0.6, // Elongated flame tongue
-          life: 1.0,
-          decay: 0.022 + Math.random() * 0.026,
-          size: 16 + Math.random() * 22,
-        });
-      }
-    }
-
-    function firebendMotionBurst(x, y, dx, dy, count = 3) {
-      // 1. Core plasma at touchpoint
-      spawnCgiFireParticle(x, y, dx * 0.2, dy * 0.2, 'core');
-
-      // 2. Swirling flame tongues
-      for (let i = 0; i < count; i++) {
-        spawnCgiFireParticle(x, y, dx * 0.15, dy * 0.15, 'flame');
-      }
-
-      // 3. Streaking directional embers (motion blurred needles)
-      if (Math.random() < 0.65) {
-        const sparkSpeed = 3.5 + Math.random() * 5.0;
-        const sparkAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.2;
-        const svx = Math.cos(sparkAngle) * sparkSpeed + (Math.random() - 0.5) * 2.5;
-        const svy = Math.sin(sparkAngle) * sparkSpeed - Math.random() * 4.0;
-        spawnCgiFireParticle(x, y, svx, svy, 'spark');
-      }
-    }
-
-    // Pointer event listeners
-    window.addEventListener('pointermove', (e) => {
-      const dark = isDarkMode();
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-
-      if (dark) {
-        // Dark Mode: smooth water ripples in header/hero
-        const coords = getHeroCoordinates(e);
-        if (!coords) return;
-        initAudio();
-        const x = coords.x;
-        const y = coords.y;
+    // Pointer move in Header (.nav)
+    if (navEl) {
+      navEl.addEventListener('pointermove', (e) => {
+        if (isDarkMode()) return; // Light mode only
+        const rect = navEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         const now = performance.now() * 0.001;
 
-        if (lastX !== null && lastY !== null) {
-          const dx = x - lastX;
-          const dy = y - lastY;
+        if (lastNavX !== null && lastNavY !== null) {
+          const dx = x - lastNavX;
+          const dy = y - lastNavY;
           const dist = Math.hypot(dx, dy);
-          const dt = now - lastTime;
+          const dt = now - lastNavTime;
 
-          if (dist > 20 && dt > 0.028) {
-            const speed = Math.min(dist / (dt * 1000), 1.6);
-            const intensity = 0.012 + speed * 0.008;
-            const waveSpeed = 0.28 + speed * 0.05;
-            const wavelength = 0.085 + Math.random() * 0.015;
-
-            addRipple(x, y, intensity, waveSpeed, wavelength);
-            if (dist > 75 && Math.random() < 0.12) {
-              playWaterDropSound(speed * 0.35);
-            }
-            lastX = x;
-            lastY = y;
-            lastTime = now;
+          if (dist > 16 && dt > 0.03) {
+            const speed = Math.min(dist / (dt * 1000), 1.5);
+            addNavRipple(x, y, 0.025 + speed * 0.015, 0.4 + speed * 0.08);
+            lastNavX = x;
+            lastNavY = y;
+            lastNavTime = now;
           }
         } else {
-          lastX = x;
-          lastY = y;
-          lastTime = now;
-          addRipple(x, y, 0.016, 0.3, 0.085);
+          lastNavX = x;
+          lastNavY = y;
+          lastNavTime = now;
+          addNavRipple(x, y, 0.03, 0.42);
         }
-        resetIdleTimer();
-      } else {
-        // Light Mode: Firebending gesture stream following cursor
-        if (prevMouseX > 0 && prevMouseY > 0) {
-          const dx = mouseX - prevMouseX;
-          const dy = mouseY - prevMouseY;
-          const dist = Math.hypot(dx, dy);
+      }, { passive: true });
 
-          // Interpolate steps along stroke trajectory for continuous seamless flame stream
-          const steps = Math.max(1, Math.min(10, Math.floor(dist / 8)));
-          for (let s = 1; s <= steps; s++) {
-            const interX = prevMouseX + dx * (s / steps);
-            const interY = prevMouseY + dy * (s / steps);
-            firebendMotionBurst(interX, interY, dx, dy, Math.max(1, Math.floor(steps * 0.4)));
-          }
-        } else {
-          firebendMotionBurst(mouseX, mouseY, 0, 0, 4);
-        }
-        prevMouseX = mouseX;
-        prevMouseY = mouseY;
-      }
-    }, { passive: true });
-
-    window.addEventListener('pointerdown', (e) => {
-      const dark = isDarkMode();
-      if (dark) {
-        const coords = getHeroCoordinates(e);
-        if (!coords) return;
+      navEl.addEventListener('pointerdown', (e) => {
+        if (isDarkMode()) return;
+        const rect = navEl.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         initAudio();
-        addRipple(coords.x, coords.y, 0.045, 0.36, 0.085);
+        addNavRipple(x, y, 0.065, 0.48);
         playWaterDropSound(0.7);
-        resetIdleTimer();
-      } else {
-        // Avatar Firebending Strike: Explosive radial shockwave burst
-        const cx = e.clientX;
-        const cy = e.clientY;
-        for (let i = 0; i < 28; i++) {
-          const a = (i / 28) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
-          const spd = 4.5 + Math.random() * 8.0;
-          spawnCgiFireParticle(cx, cy, Math.cos(a) * spd, Math.sin(a) * spd - 2.0, i % 2 === 0 ? 'spark' : 'flame');
-        }
-        for (let j = 0; j < 6; j++) {
-          spawnCgiFireParticle(cx, cy, (Math.random() - 0.5) * 2, -Math.random() * 3, 'core');
-        }
-      }
-    }, { passive: true });
-
-    function resetIdleTimer() {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(triggerAmbientDrop, 5000);
+      }, { passive: true });
     }
-
-    function triggerAmbientDrop() {
-      if (document.hidden || !heroEl || !isDarkMode()) return;
-      const rect = heroEl.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > window.innerHeight) return;
-
-      const rx = waterWidth * (0.2 + Math.random() * 0.6);
-      const ry = waterHeight * (0.2 + Math.random() * 0.6);
-      addRipple(rx, ry, 0.018, 0.28, 0.09);
-      playWaterDropSound(0.25);
-      idleTimer = setTimeout(triggerAmbientDrop, 6000 + Math.random() * 3500);
-    }
-    resetIdleTimer();
 
     /* ==========================================================================
-       6. RENDER LOOP
+       6. RESIZING
+       ========================================================================== */
+    let dpr = 1;
+
+    function onResize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      // Hero Canvas (Dark Mode)
+      if (heroCanvas && heroEl) {
+        const rect = heroEl.getBoundingClientRect();
+        const w = Math.max(rect.width, 320);
+        const h = Math.max(rect.height, 400);
+        heroCanvas.width = Math.floor(w * dpr);
+        heroCanvas.height = Math.floor(h * dpr);
+        if (glHero) {
+          glHero.viewport(0, 0, heroCanvas.width, heroCanvas.height);
+        }
+      }
+
+      // Nav Canvas (Light Mode Header)
+      if (navCanvas && navEl) {
+        const rect = navEl.getBoundingClientRect();
+        const w = Math.max(rect.width, 320);
+        const h = Math.max(rect.height, 60);
+        navCanvas.width = Math.floor(w * dpr);
+        navCanvas.height = Math.floor(h * dpr);
+      }
+    }
+    window.addEventListener('resize', onResize, { passive: true });
+    onResize();
+
+    /* ==========================================================================
+       7. RENDER LOOP
        ========================================================================== */
     let animFrameId = null;
 
     function render() {
       animFrameId = requestAnimationFrame(render);
       const dark = isDarkMode();
+      const now = performance.now() * 0.001;
 
       if (dark) {
-        // Render Dark Mode Water (85% Opacity, Ultra-Smooth)
-        if (!waterCanvas || waterCanvas.style.display === 'none') return;
-        const now = performance.now() * 0.001;
+        // Dark Mode: Render calm still liquid water in .hero
+        if (!heroCanvas || heroCanvas.style.display === 'none') return;
 
-        while (ripples.length > 0 && (now - ripples[0].birth) > 2.6) {
-          ripples.shift();
-        }
+        if (glHero && programHero) {
+          glHero.useProgram(programHero);
+          glHero.uniform2f(uHeroResolution, heroCanvas.width, heroCanvas.height);
+          glHero.uniform1f(uHeroTime, now);
 
-        if (useWebGL && gl && program) {
-          gl.useProgram(program);
-          gl.uniform2f(uResolution, waterCanvas.width, waterCanvas.height);
-          gl.uniform1f(uTime, now);
-          gl.uniform1i(uRippleCount, ripples.length);
-
-          const rippleData = new Float32Array(MAX_RIPPLES * 3);
-          const paramData = new Float32Array(MAX_RIPPLES * 3);
-
-          for (let i = 0; i < ripples.length; i++) {
-            const r = ripples[i];
-            const idx = i * 3;
-            rippleData[idx] = r.x;
-            rippleData[idx + 1] = r.y;
-            rippleData[idx + 2] = r.birth;
-            paramData[idx] = r.intensity;
-            paramData[idx + 1] = r.speed;
-            paramData[idx + 2] = r.wavelength;
-          }
-
-          gl.uniform3fv(uRipples, rippleData);
-          gl.uniform3fv(uRippleParams, paramData);
-
-          gl.clearColor(0.0, 0.0, 0.0, 0.0);
-          gl.clear(gl.COLOR_BUFFER_BIT);
-          gl.drawArrays(gl.TRIANGLES, 0, 6);
-        } else if (ctx2dWater) {
-          ctx2dWater.clearRect(0, 0, waterCanvas.width, waterCanvas.height);
-          ctx2dWater.save();
-          ctx2dWater.scale(dpr, dpr);
-
-          for (let i = 0; i < ripples.length; i++) {
-            const r = ripples[i];
-            const age = now - r.birth;
-            if (age < 0 || age > 2.6) continue;
-
-            const currentR = age * r.speed * waterWidth * 0.65;
-            const fade = Math.max(0, 1 - (age / 2.6));
-
-            ctx2dWater.beginPath();
-            ctx2dWater.arc(r.screenX, r.screenY, currentR, 0, Math.PI * 2);
-            ctx2dWater.lineWidth = 1.8 + age * 2.2;
-            ctx2dWater.strokeStyle = `rgba(212, 255, 95, ${fade * r.intensity * 3.8})`;
-            ctx2dWater.stroke();
-          }
-          ctx2dWater.restore();
+          glHero.clearColor(0.0, 0.0, 0.0, 0.0);
+          glHero.clear(glHero.COLOR_BUFFER_BIT);
+          glHero.drawArrays(glHero.TRIANGLES, 0, 6);
         }
       } else {
-        // Render Light Mode CGI Firebending
-        if (!fireCanvas || !fireCtx || fireCanvas.style.display === 'none') return;
-        fireCtx.clearRect(0, 0, fireCanvas.width, fireCanvas.height);
+        // Light Mode: Render sparkling water ripples in header (.nav)
+        if (!navCanvas || !navCtx2d || navCanvas.style.display === 'none') return;
+        navCtx2d.clearRect(0, 0, navCanvas.width, navCanvas.height);
 
-        const now = performance.now();
-        // Constant living flame dance at cursor tip
-        if (mouseX > 0 && mouseY > 0 && (now - lastSpawnTime > 35)) {
-          firebendMotionBurst(mouseX, mouseY, 0, -1.5, 2);
-          lastSpawnTime = now;
+        while (navRipples.length > 0 && (now - navRipples[0].birth) > 2.2) {
+          navRipples.shift();
         }
 
-        fireCtx.save();
-        fireCtx.scale(dpr, dpr);
+        const navW = navCanvas.width / dpr;
+        navCtx2d.save();
+        navCtx2d.scale(dpr, dpr);
 
-        // Ambient radiant heat glow bloom at cursor
-        if (mouseX > 0 && mouseY > 0) {
-          const heatGlow = fireCtx.createRadialGradient(mouseX, mouseY, 0, mouseX, mouseY, 55);
-          heatGlow.addColorStop(0, 'rgba(255, 180, 40, 0.28)');
-          heatGlow.addColorStop(0.4, 'rgba(255, 90, 10, 0.14)');
-          heatGlow.addColorStop(1, 'rgba(200, 20, 0, 0)');
-          fireCtx.beginPath();
-          fireCtx.arc(mouseX, mouseY, 55, 0, Math.PI * 2);
-          fireCtx.fillStyle = heatGlow;
-          fireCtx.fill();
+        for (let i = 0; i < navRipples.length; i++) {
+          const r = navRipples[i];
+          const age = now - r.birth;
+          if (age < 0 || age > 2.2) continue;
+
+          const currentR = age * r.speed * navW * 0.35;
+          const fade = Math.max(0, 1 - (age / 2.2));
+
+          // Crystal aquatic turquoise ripple ring
+          navCtx2d.beginPath();
+          navCtx2d.arc(r.x, r.y, currentR, 0, Math.PI * 2);
+          navCtx2d.lineWidth = 1.6 + age * 2.2;
+          navCtx2d.strokeStyle = `rgba(32, 138, 120, ${fade * r.intensity * 4.2})`;
+          navCtx2d.shadowColor = 'rgba(60, 200, 175, 0.5)';
+          navCtx2d.shadowBlur = 8;
+          navCtx2d.stroke();
+          navCtx2d.shadowBlur = 0;
         }
 
-        // Render CGI Fire Particles with volumetric layering
-        for (let i = fireParticles.length - 1; i >= 0; i--) {
-          const p = fireParticles[i];
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy *= 0.975;
-          p.vx *= 0.97;
-          p.life -= p.decay;
-
-          if (p.life <= 0) {
-            fireParticles.splice(i, 1);
-            continue;
-          }
-
-          const alpha = Math.min(1.0, p.life * 1.35);
-
-          if (p.type === 'spark') {
-            // High-speed streaking ember needle with motion trail
-            const tailX = p.x - p.vx * 2.6;
-            const tailY = p.y - p.vy * 2.6;
-
-            fireCtx.beginPath();
-            fireCtx.moveTo(p.x, p.y);
-            fireCtx.lineTo(tailX, tailY);
-            fireCtx.strokeStyle = p.color;
-            fireCtx.lineWidth = p.size * alpha;
-            fireCtx.lineCap = 'round';
-            fireCtx.shadowColor = '#ff5500';
-            fireCtx.shadowBlur = 6;
-            fireCtx.stroke();
-            fireCtx.shadowBlur = 0;
-          } else if (p.type === 'core') {
-            // Intense white-hot plasma tongue
-            const rad = p.size * (0.5 + (1.0 - p.life) * 0.7);
-            const coreGrad = fireCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, Math.max(1, rad));
-            coreGrad.addColorStop(0, `rgba(255, 255, 245, ${alpha * 0.98})`);
-            coreGrad.addColorStop(0.35, `rgba(255, 235, 120, ${alpha * 0.9})`);
-            coreGrad.addColorStop(0.75, `rgba(255, 140, 20, ${alpha * 0.5})`);
-            coreGrad.addColorStop(1, 'rgba(220, 40, 0, 0)');
-
-            fireCtx.beginPath();
-            fireCtx.arc(p.x, p.y, rad, 0, Math.PI * 2);
-            fireCtx.fillStyle = coreGrad;
-            fireCtx.fill();
-          } else {
-            // Volumetric swirling flame body (Avatar CGI firebending look)
-            p.rot += p.rotSpeed;
-            const currentR = p.size * (0.35 + (1.0 - p.life) * 0.95);
-
-            fireCtx.save();
-            fireCtx.translate(p.x, p.y);
-            fireCtx.rotate(p.rot);
-            fireCtx.scale(p.scaleX, p.scaleY);
-
-            const flameGrad = fireCtx.createRadialGradient(0, 0, 0, 0, 0, Math.max(1, currentR));
-            // Blackbody thermal curve: White core -> Sun Gold -> Magma Orange -> Ruby Crimson -> Dissipation
-            flameGrad.addColorStop(0, `rgba(255, 255, 230, ${alpha * 0.96})`);
-            flameGrad.addColorStop(0.18, `rgba(255, 215, 30, ${alpha * 0.92})`);
-            flameGrad.addColorStop(0.48, `rgba(255, 95, 5, ${alpha * 0.82})`);
-            flameGrad.addColorStop(0.82, `rgba(205, 25, 0, ${alpha * 0.45})`);
-            flameGrad.addColorStop(1, 'rgba(80, 5, 0, 0)');
-
-            fireCtx.beginPath();
-            fireCtx.arc(0, 0, currentR, 0, Math.PI * 2);
-            fireCtx.fillStyle = flameGrad;
-            fireCtx.fill();
-
-            fireCtx.restore();
-          }
-        }
-
-        fireCtx.restore();
+        navCtx2d.restore();
       }
     }
 
@@ -746,9 +442,8 @@
         }
       } else {
         if (!animFrameId) {
-          lastTime = performance.now() * 0.001;
-          ripples.length = 0;
-          fireParticles.length = 0;
+          lastNavTime = performance.now() * 0.001;
+          navRipples.length = 0;
           animFrameId = requestAnimationFrame(render);
         }
       }
@@ -766,7 +461,7 @@
       return soundEnabled;
     },
     triggerSplash(x, y, intensity = 0.05) {
-      if (soundEnabled && isDarkMode()) {
+      if (soundEnabled) {
         playWaterDropSound(intensity * 6);
       }
     },
