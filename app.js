@@ -72,7 +72,7 @@
     { threshold: 0.08 }
   );
 
-  document.querySelectorAll('.section, .project').forEach((el) => {
+  document.querySelectorAll('.section').forEach((el) => {
     el.classList.add('reveal');
     observer.observe(el);
   });

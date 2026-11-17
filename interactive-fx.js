@@ -20,7 +20,7 @@
   const isFinePointer = window.matchMedia('(pointer: fine)').matches;
 
   /* ==========================================================================
-     1. SCROLL PROGRESS BAR & DYNAMIC SCROLL MOMENTUM SKEW
+     1. SCROLL PROGRESS BAR (Cards remain completely static on scroll)
      ========================================================================== */
   const progressBar = document.createElement('div');
   progressBar.className = 'scroll-progress-bar';
@@ -28,45 +28,14 @@
   document.body.prepend(progressBar);
   const progressFill = progressBar.querySelector('.scroll-progress-fill');
 
-  let lastScrollY = window.scrollY;
-  let targetSkew = 0;
-  let currentSkew = 0;
-  let scrollResetTimer = null;
-
   function onScroll() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
     progressFill.style.width = `${progress}%`;
-
-    // Calculate scroll momentum velocity
-    const delta = scrollTop - lastScrollY;
-    lastScrollY = scrollTop;
-
-    // Scrolling down: negative skew (tilts diagonal forward)
-    // Clamped between -2.2deg and +2.2deg for smooth, tasteful diagonal dynamics
-    const velocity = Math.max(-2.2, Math.min(2.2, -delta * 0.045));
-    targetSkew = velocity;
-
-    clearTimeout(scrollResetTimer);
-    scrollResetTimer = setTimeout(() => {
-      targetSkew = 0;
-    }, 85);
   }
   window.addEventListener('scroll', onScroll, { passive: true });
-
-  // Spring physics loop for smooth diagonal recovery
-  function updateScrollSkewLoop() {
-    currentSkew += (targetSkew - currentSkew) * 0.14;
-
-    if (Math.abs(currentSkew) > 0.03) {
-      document.documentElement.style.setProperty('--scroll-skew', `${currentSkew.toFixed(2)}deg`);
-    } else {
-      document.documentElement.style.setProperty('--scroll-skew', '0deg');
-    }
-    requestAnimationFrame(updateScrollSkewLoop);
-  }
-  requestAnimationFrame(updateScrollSkewLoop);
+  document.documentElement.style.setProperty('--scroll-skew', '0deg');
 
   /* ==========================================================================
      2. FLUID CUSTOM CURSOR & MAGNETIC PHYSICS

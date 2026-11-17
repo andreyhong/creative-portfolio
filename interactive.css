@@ -202,15 +202,13 @@ html, body {
   box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.45);
 }
 
-/* Dynamic scroll momentum skew: sections tilt diagonally when scrolling down */
+/* Sections & cards stay static on scroll (no tilt/skew) */
 .projects,
 .case-tiles,
 .video-grid,
 .asset-grid,
 .experience {
-  transform: skewY(var(--scroll-skew, 0deg));
-  transition: transform 0.08s cubic-bezier(0.2, 0.8, 0.2, 1);
-  will-change: transform;
+  transform: none;
 }
 
 /* Responsive adjustment for diagonal cuts on smaller screens */
