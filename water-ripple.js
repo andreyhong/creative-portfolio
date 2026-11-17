@@ -1,24 +1,19 @@
 /**
- * Unified 3D WebGL Fluid Water Engine for Andrey Hong Portfolio
- * Features:
- * - Real 3D liquid water surface covering Header (.nav) and Hero (.hero) seamlessly
- * - 3D Surface Normal mapping, Blinn-Phong specular glints, Fresnel, and dynamic caustics
- * - Interactive 3D water ripples on every cursor movement across Header or Hero
- * - Dark Mode: Deep obsidian crystal pool with neon-lime (#d4ff5f) & cyan highlights (85% peak opacity)
- * - Light Mode: Crisp oceanic turquoise liquid surface with specular sheen
- * - Silky smooth, organic wave dynamics ("jangan terlalu beriak tapi smooth")
+ * Water Ripple & Fluid Wave Engine for Andrey Hong Portfolio
+ * Confined strictly to Header & Hero section with calm, elegant, silky wave dynamics.
+ * Non-overwhelming: subtle, tranquil ripples that react to mouse movements inside hero/header.
  */
 
 (function () {
   'use strict';
 
-  const MAX_RIPPLES = 28;
+  const MAX_RIPPLES = 24;
   const ripples = [];
   let lastX = null;
   let lastY = null;
   let lastTime = 0;
-  let animFrameId = null;
   let idleTimer = null;
+  let animFrameId = null;
 
   // Sound generator using Web Audio API
   let audioCtx = null;
@@ -43,13 +38,13 @@
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
-      const baseFreq = 440 + Math.random() * 180;
+      const baseFreq = 420 + Math.random() * 200;
       osc.type = 'sine';
       osc.frequency.setValueAtTime(baseFreq, now);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 2.0, now + 0.05);
-      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.85, now + 0.14);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, now + 0.14);
 
-      const vol = Math.min(0.08, 0.02 + intensity * 0.04);
+      const vol = Math.min(0.12, 0.03 + intensity * 0.05);
       gain.gain.setValueAtTime(vol, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
 
@@ -63,60 +58,42 @@
     }
   }
 
-  function isDarkMode() {
-    const theme = document.documentElement.getAttribute('data-theme');
-    if (theme) return theme === 'dark';
-    return !document.documentElement.classList.contains('light');
-  }
-
-  // Create unified canvas spanning Header + Hero
+  // Create canvas container attached to Hero section
   let canvas = null;
   let heroEl = null;
-  let navEl = null;
 
   function initCanvas() {
     heroEl = document.querySelector('.hero');
-    navEl = document.querySelector('.nav');
     if (!heroEl) return false;
 
     // Ensure hero has relative positioning
     heroEl.style.position = 'relative';
 
-    // Remove any legacy duplicate canvases if present
-    const oldHeroCanvas = document.getElementById('hero-water-canvas');
-    if (oldHeroCanvas) oldHeroCanvas.remove();
-    const oldNavCanvas = document.getElementById('nav-water-canvas');
-    if (oldNavCanvas) oldNavCanvas.remove();
+    const oldHero = document.getElementById('hero-water-canvas');
+    if (oldHero) oldHero.remove();
+    const oldNav = document.getElementById('nav-water-canvas');
+    if (oldNav) oldNav.remove();
+    const existing = document.getElementById('water-ripple-canvas');
+    if (existing) existing.remove();
 
-    canvas = document.getElementById('water-ripple-canvas');
-    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.id = 'water-ripple-canvas';
-      canvas.setAttribute('aria-hidden', 'true');
-      canvas.style.cssText = `
-        position: absolute;
-        top: -82px;
-        left: 0;
-        width: 100%;
-        height: calc(100% + 82px);
-        pointer-events: none;
-        z-index: 1;
-        opacity: 0.85;
-        transition: opacity 0.4s ease;
-        display: block;
-      `;
-      heroEl.prepend(canvas);
-    }
+    canvas = document.createElement('canvas');
+    canvas.id = 'water-ripple-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      mix-blend-mode: screen;
+      opacity: 0.85;
+      transition: opacity 0.4s ease;
+    `;
 
-    // Make nav semi-transparent glass so 3D water flows underneath seamlessly
-    if (navEl) {
-      navEl.style.background = isDarkMode()
-        ? 'rgba(11, 12, 13, 0.68)'
-        : 'rgba(244, 244, 238, 0.72)';
-      navEl.style.backdropFilter = 'blur(14px)';
-      navEl.style.webkitBackdropFilter = 'blur(14px)';
-    }
-
+    // Prepend to hero so it sits on hero background behind content
+    heroEl.prepend(canvas);
     return true;
   }
 
@@ -132,30 +109,34 @@
       return;
     }
 
-    function updateTheme() {
+    function isDarkMode() {
+      const theme = document.documentElement.getAttribute('data-theme');
+      if (theme) return theme === 'dark';
+      return !document.documentElement.classList.contains('light');
+    }
+
+    function updateCanvasTheme() {
       if (!canvas) return;
-      const dark = isDarkMode();
-      canvas.style.opacity = dark ? '0.85' : '0.80';
-      if (navEl) {
-        navEl.style.background = dark
-          ? 'rgba(11, 12, 13, 0.68)'
-          : 'rgba(244, 244, 238, 0.72)';
+      if (isDarkMode()) {
+        canvas.style.mixBlendMode = 'screen';
+        canvas.style.opacity = '0.85';
+      } else {
+        canvas.style.mixBlendMode = 'multiply';
+        canvas.style.opacity = '0.55';
       }
     }
 
-    const themeObserver = new MutationObserver(() => updateTheme());
+    const themeObserver = new MutationObserver(() => updateCanvasTheme());
     themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['data-theme', 'class'],
     });
-    updateTheme();
+    updateCanvasTheme();
 
-    /* ==========================================================================
-       3D WebGL Shader Engine
-       ========================================================================== */
+    // WebGL Shader Setup
     let gl = null;
     let program = null;
-    let uResolution, uTime, uRipples, uRippleParams, uRippleCount, uIsDark, uMouse, uMouseActive;
+    let uResolution, uTime, uRipples, uRippleParams, uRippleCount, uIsDark;
 
     const vertexSrc = `
       attribute vec2 a_position;
@@ -176,42 +157,28 @@
       varying vec2 v_uv;
       uniform vec2 u_resolution;
       uniform float u_time;
-      uniform vec3 u_ripples[${MAX_RIPPLES}]; // xy: uv, z: birthTime
+      uniform vec3 u_ripples[${MAX_RIPPLES}]; // xy: center in uv, z: birthTime
       uniform vec3 u_rippleParams[${MAX_RIPPLES}]; // x: intensity, y: speed, z: wavelength
       uniform int u_rippleCount;
       uniform float u_isDark;
-      uniform vec2 u_mouse;
-      uniform float u_mouseActive;
 
       void main() {
         float aspect = u_resolution.x / u_resolution.y;
         vec2 p = vec2(v_uv.x * aspect, v_uv.y);
 
-        // 1. Organic calm 3D water swell (smooth, glassy, continuous)
-        float t = u_time * 0.75;
-        float w1 = sin(p.x * 2.4 + t * 0.7) * cos(p.y * 2.1 + t * 0.5) * 0.016;
-        float w2 = sin(p.x * 3.8 - t * 0.45 + p.y * 2.8) * 0.011;
-        float w3 = cos(p.x * 1.5 + p.y * 4.2 + t * 0.8) * 0.009;
-        float h = w1 + w2 + w3;
+        float h = 0.0;
+        vec2 grad = vec2(0.0);
 
-        // Analytical gradient for resting 3D surface
-        vec2 grad = vec2(
-          cos(p.x * 2.4 + t * 0.7) * 2.4 * cos(p.y * 2.1 + t * 0.5) * 0.016 +
-          cos(p.x * 3.8 - t * 0.45 + p.y * 2.8) * 3.8 * 0.011 -
-          sin(p.x * 1.5 + p.y * 4.2 + t * 0.8) * 1.5 * 0.009,
+        // Calm, gentle ambient surface shimmer
+        float amb = sin(p.x * 3.5 + u_time * 0.6) * cos(p.y * 3.5 + u_time * 0.5) * 0.004;
+        h += amb;
 
-          -sin(p.x * 2.4 + t * 0.7) * sin(p.y * 2.1 + t * 0.5) * 2.1 * 0.016 +
-          cos(p.x * 3.8 - t * 0.45 + p.y * 2.8) * 2.8 * 0.011 -
-          sin(p.x * 1.5 + p.y * 4.2 + t * 0.8) * 4.2 * 0.009
-        );
-
-        // 2. Interactive 3D Cursor Waves (Dynamic Ripples)
         for (int i = 0; i < ${MAX_RIPPLES}; i++) {
           if (i >= u_rippleCount) break;
           vec2 c = vec2(u_ripples[i].x * aspect, u_ripples[i].y);
           float birth = u_ripples[i].z;
           float age = u_time - birth;
-          if (age < 0.0 || age > 2.5) continue;
+          if (age < 0.0 || age > 2.2) continue;
 
           float intensity = u_rippleParams[i].x;
           float speed = u_rippleParams[i].y;
@@ -221,10 +188,10 @@
           float waveFront = age * speed;
           float diff = d - waveFront;
 
-          // Smooth Gaussian packet envelope
-          float width = 0.08 + age * 0.055;
-          float envelope = exp(-(diff * diff) / (2.0 * width * width));
-          float decay = exp(-age * 1.65) / (sqrt(d + 0.16));
+          // Soft Gaussian packet envelope (calm & silky)
+          float width = 0.09 + age * 0.05;
+          float envelope = exp(- (diff * diff) / (2.0 * width * width));
+          float decay = exp(-age * 2.3) / (sqrt(d + 0.15));
 
           float k = 6.2831853 / wavelength;
           float wave = sin(diff * k) * envelope * decay * intensity;
@@ -235,64 +202,38 @@
           grad += dir * dWave;
         }
 
-        // Real-time cursor liquid glow & displacement
-        if (u_mouseActive > 0.5) {
-          vec2 mPos = vec2(u_mouse.x * aspect, u_mouse.y);
-          float mDist = distance(p, mPos);
-          float mGlow = exp(-(mDist * mDist) / (2.0 * 0.045 * 0.045)) * 0.016;
-          h += mGlow;
-          if (mDist > 0.001) {
-            grad += normalize(p - mPos) * (-mGlow * 24.0);
-          }
-        }
-
-        // 3. 3D Surface Normal with strong relief multiplier
-        vec3 normal = normalize(vec3(-grad.x * 4.6, -grad.y * 4.6, 1.0));
-
-        // 4. 3D Lighting (Key light, Fill light, Blinn-Phong specular, Fresnel, Caustics)
-        vec3 lightDir1 = normalize(vec3(-0.45, 0.60, 0.82));
-        vec3 lightDir2 = normalize(vec3(0.55, -0.30, 0.75));
+        vec3 normal = normalize(vec3(-grad.x * 2.0, -grad.y * 2.0, 1.0));
+        vec3 lightDir = normalize(vec3(-0.35, 0.45, 0.82));
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
+        vec3 halfDir = normalize(lightDir + viewDir);
 
-        vec3 half1 = normalize(lightDir1 + viewDir);
-        vec3 half2 = normalize(lightDir2 + viewDir);
+        float spec = pow(max(dot(normal, halfDir), 0.0), 30.0);
+        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.5);
+        float caustic = pow(abs(h) * 22.0, 1.35);
 
-        float spec1 = pow(max(dot(normal, half1), 0.0), 34.0);
-        float spec2 = pow(max(dot(normal, half2), 0.0), 18.0) * 0.45;
-        float spec = spec1 + spec2;
-
-        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 2.8);
-        float caustic = pow(abs(h) * 26.0, 1.30);
-
-        vec3 finalColor;
+        vec3 color;
         float alpha;
 
         if (u_isDark > 0.5) {
-          // Dark Mode: Deep obsidian liquid with neon-lime (#d4ff5f) & cyan crystalline glints
-          vec3 deepBase = vec3(0.05, 0.07, 0.08);
+          // Elegant dark mode: neon-lime accent (#d4ff5f) + crystalline water highlight
           vec3 limeAccent = vec3(0.83, 1.0, 0.37);
-          vec3 aquaGlow = vec3(0.18, 0.90, 0.82);
-          vec3 specWhite = vec3(0.98, 1.0, 0.96);
+          vec3 waterWhite = vec3(0.96, 0.99, 1.0);
+          vec3 deepCyan = vec3(0.15, 0.8, 0.75);
 
-          vec3 body = mix(deepBase, aquaGlow, clamp(caustic * 0.55 + fresnel * 0.40, 0.0, 1.0));
-          body = mix(body, limeAccent, clamp(spec * 0.45 + h * 3.8, 0.0, 1.0));
-          finalColor = body + specWhite * spec * 1.15;
+          color = mix(limeAccent, waterWhite, spec * 0.65);
+          color = mix(color, deepCyan, caustic * 0.25);
 
-          // Clear 3D presence: base resting 0.28, rising to 0.85 on ripples and specular crests
-          alpha = clamp(0.26 + spec * 1.45 + caustic * 0.50 + fresnel * 0.32 + abs(h) * 4.5, 0.0, 0.85);
+          alpha = clamp(spec * 1.5 + caustic * 0.45 + fresnel * 0.2 + abs(h) * 1.8, 0.0, 0.75);
         } else {
-          // Light Mode: Clean oceanic turquoise liquid surface
-          vec3 shallowAqua = vec3(0.12, 0.68, 0.62);
-          vec3 brightAqua = vec3(0.24, 0.86, 0.76);
-          vec3 glint = vec3(1.0, 1.0, 1.0);
+          // Light mode: Oceanic turquoise sheen
+          vec3 inkShimmer = vec3(0.15, 0.45, 0.4);
+          vec3 lightGlint = vec3(0.28, 0.68, 0.55);
 
-          vec3 body = mix(shallowAqua, brightAqua, clamp(caustic * 0.65 + fresnel * 0.45, 0.0, 1.0));
-          finalColor = mix(body, glint, spec * 0.75);
-
-          alpha = clamp(0.22 + spec * 1.20 + caustic * 0.40 + fresnel * 0.28 + abs(h) * 3.8, 0.0, 0.78);
+          color = mix(inkShimmer, lightGlint, spec);
+          alpha = clamp(spec * 1.3 + caustic * 0.35 + fresnel * 0.18 + abs(h) * 1.4, 0.0, 0.65);
         }
 
-        gl_FragColor = vec4(finalColor, alpha);
+        gl_FragColor = vec4(color, alpha);
       }
     `;
 
@@ -342,8 +283,6 @@
             uRippleParams = gl.getUniformLocation(program, 'u_rippleParams');
             uRippleCount = gl.getUniformLocation(program, 'u_rippleCount');
             uIsDark = gl.getUniformLocation(program, 'u_isDark');
-            uMouse = gl.getUniformLocation(program, 'u_mouse');
-            uMouseActive = gl.getUniformLocation(program, 'u_mouseActive');
 
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -351,7 +290,7 @@
         }
       }
     } catch (err) {
-      console.warn('WebGL init fallback:', err);
+      console.warn('WebGL init failed, using Canvas 2D fallback:', err);
       useWebGL = false;
     }
 
@@ -360,22 +299,20 @@
       ctx2d = canvas.getContext('2d');
     }
 
-    /* ==========================================================================
-       Resizing
-       ========================================================================== */
-    let canvasWidth = 0;
-    let canvasHeight = 0;
+    // Resize handler confined to Hero element dimensions
+    let width = 0;
+    let height = 0;
     let dpr = 1;
 
     function onResize() {
       if (!canvas || !heroEl) return;
       const rect = heroEl.getBoundingClientRect();
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvasWidth = Math.max(rect.width, 320);
-      canvasHeight = Math.max(rect.height + 82, 480);
+      width = Math.max(rect.width, 320);
+      height = Math.max(rect.height, 400);
 
-      canvas.width = Math.floor(canvasWidth * dpr);
-      canvas.height = Math.floor(canvasHeight * dpr);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
 
       if (useWebGL && gl) {
         gl.viewport(0, 0, canvas.width, canvas.height);
@@ -384,18 +321,10 @@
     window.addEventListener('resize', onResize, { passive: true });
     onResize();
 
-    /* ==========================================================================
-       Ripple Management
-       ========================================================================== */
-    let mouseUVX = -1;
-    let mouseUVY = -1;
-    let isMouseActive = false;
-
-    function addRipple(localX, localY, intensity = 0.026, speed = 0.38, wavelength = 0.075) {
-      if (canvasWidth <= 0 || canvasHeight <= 0) return;
+    function addRipple(localX, localY, intensity = 0.025, speed = 0.38, wavelength = 0.075) {
       const now = performance.now() * 0.001;
-      const uvX = localX / canvasWidth;
-      const uvY = 1.0 - (localY / canvasHeight);
+      const uvX = localX / width;
+      const uvY = 1.0 - (localY / height);
 
       if (ripples.length >= MAX_RIPPLES) {
         ripples.shift();
@@ -403,43 +332,39 @@
       ripples.push({
         x: uvX,
         y: uvY,
-        localX: localX,
-        localY: localY,
+        screenX: localX,
+        screenY: localY,
         birth: now,
-        intensity: Math.min(0.065, intensity),
+        intensity: Math.min(0.06, intensity),
         speed: speed,
         wavelength: wavelength,
       });
     }
 
-    // Get pointer coordinates relative to the unified top canvas (spanning nav + hero)
-    function getCanvasCoordinates(e) {
-      if (!canvas) return null;
-      const rect = canvas.getBoundingClientRect();
+    // Check if pointer is inside Hero (header excluded)
+    function getHeroCoordinates(e) {
+      if (!heroEl) return null;
+      const heroRect = heroEl.getBoundingClientRect();
       const clientX = e.clientX;
       const clientY = e.clientY;
 
-      if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+      // Confined strictly to hero section - header has no water effects
+      if (clientY >= heroRect.top && clientY <= heroRect.bottom && clientX >= heroRect.left && clientX <= heroRect.right) {
         return {
-          x: clientX - rect.left,
-          y: clientY - rect.top,
+          x: clientX - heroRect.left,
+          y: clientY - heroRect.top,
         };
       }
+
       return null;
     }
 
+    // Pointer move in Header/Hero
     function onPointerMove(e) {
-      const coords = getCanvasCoordinates(e);
-      if (!coords) {
-        isMouseActive = false;
-        return;
-      }
+      const coords = getHeroCoordinates(e);
+      if (!coords) return; // Outside header/hero: do nothing!
 
       initAudio();
-      isMouseActive = true;
-      mouseUVX = coords.x / canvasWidth;
-      mouseUVY = 1.0 - (coords.y / canvasHeight);
-
       const x = coords.x;
       const y = coords.y;
       const now = performance.now() * 0.001;
@@ -450,17 +375,17 @@
         const dist = Math.hypot(dx, dy);
         const dt = now - lastTime;
 
-        // Controlled, smooth ripple threshold: responds reliably without chaos
-        if (dist > 12 && dt > 0.02) {
-          const speedFactor = Math.min(dist / (dt * 1000), 2.0);
-          const intensity = 0.022 + speedFactor * 0.014;
-          const waveSpeed = 0.36 + speedFactor * 0.06;
-          const wavelength = 0.072 + Math.random() * 0.012;
+        // Controlled, calm threshold so it doesn't become overly turbulent
+        if (dist > 18 && dt > 0.024) {
+          const speed = Math.min(dist / (dt * 1000), 1.8);
+          const intensity = 0.018 + speed * 0.015;
+          const waveSpeed = 0.35 + speed * 0.08;
+          const wavelength = 0.07 + Math.random() * 0.015;
 
           addRipple(x, y, intensity, waveSpeed, wavelength);
 
-          if (dist > 75 && Math.random() < 0.16) {
-            playWaterDropSound(speedFactor * 0.35);
+          if (dist > 65 && Math.random() < 0.15) {
+            playWaterDropSound(speed * 0.4);
           }
 
           lastX = x;
@@ -471,105 +396,91 @@
         lastX = x;
         lastY = y;
         lastTime = now;
-        addRipple(x, y, 0.026, 0.38, 0.075);
+        addRipple(x, y, 0.025, 0.35, 0.075);
       }
 
       resetIdleTimer();
     }
 
     function onPointerDown(e) {
-      const coords = getCanvasCoordinates(e);
+      const coords = getHeroCoordinates(e);
       if (!coords) return;
+
       initAudio();
       const x = coords.x;
       const y = coords.y;
 
-      // Generates a crisp, elegant 3D splash ripple on click
-      addRipple(x, y, 0.048, 0.44, 0.082);
-      setTimeout(() => addRipple(x, y, 0.032, 0.36, 0.07), 80);
-      playWaterDropSound(0.55);
+      // Gentle droplet splash in hero
+      addRipple(x, y, 0.065, 0.42, 0.08);
+      setTimeout(() => addRipple(x, y, 0.04, 0.36, 0.07), 80);
+
+      playWaterDropSound(0.8);
       resetIdleTimer();
     }
 
-    function onPointerLeave() {
-      isMouseActive = false;
-      lastX = null;
-      lastY = null;
+    function resetIdleTimer() {
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(triggerAmbientDrop, 4500);
+    }
+
+    function triggerAmbientDrop() {
+      if (document.hidden || !heroEl) return;
+      const rect = heroEl.getBoundingClientRect();
+      // Only trigger if hero is somewhat visible in viewport
+      if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+
+      const rx = width * (0.2 + Math.random() * 0.6);
+      const ry = height * (0.2 + Math.random() * 0.6);
+      addRipple(rx, ry, 0.035, 0.32, 0.08);
+      playWaterDropSound(0.3);
+      idleTimer = setTimeout(triggerAmbientDrop, 5000 + Math.random() * 3000);
     }
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('pointerdown', onPointerDown, { passive: true });
-    document.addEventListener('pointerleave', onPointerLeave, { passive: true });
-
-    // Idle ambient ripple: gentle droplet when user stops interacting
-    function resetIdleTimer() {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(triggerAmbientDrop, 3600);
-    }
-
-    function triggerAmbientDrop() {
-      if (canvasWidth > 0 && canvasHeight > 0) {
-        const rx = canvasWidth * (0.2 + Math.random() * 0.6);
-        const ry = canvasHeight * (0.2 + Math.random() * 0.6);
-        addRipple(rx, ry, 0.020, 0.32, 0.075);
-        if (Math.random() < 0.3) {
-          playWaterDropSound(0.2);
-        }
-      }
-      resetIdleTimer();
-    }
     resetIdleTimer();
 
-    /* ==========================================================================
-       Render Loop
-       ========================================================================== */
+    // Render loop
     function render() {
       animFrameId = requestAnimationFrame(render);
-      const now = performance.now() * 0.001;
-      const dark = isDarkMode();
 
-      // Prune expired ripples
-      while (ripples.length > 0 && (now - ripples[0].birth) > 2.6) {
+      const now = performance.now() * 0.001;
+
+      while (ripples.length > 0 && (now - ripples[0].birth) > 2.2) {
         ripples.shift();
       }
 
+      const dark = isDarkMode() ? 1.0 : 0.0;
+
       if (useWebGL && gl && program) {
         gl.useProgram(program);
-
         gl.uniform2f(uResolution, canvas.width, canvas.height);
         gl.uniform1f(uTime, now);
-        gl.uniform1f(uIsDark, dark ? 1.0 : 0.0);
-        gl.uniform2f(uMouse, mouseUVX, mouseUVY);
-        gl.uniform1f(uMouseActive, isMouseActive ? 1.0 : 0.0);
+        gl.uniform1f(uIsDark, dark);
+        gl.uniform1i(uRippleCount, ripples.length);
 
-        const count = ripples.length;
-        gl.uniform1i(uRippleCount, count);
+        const rippleData = new Float32Array(MAX_RIPPLES * 3);
+        const paramData = new Float32Array(MAX_RIPPLES * 3);
 
-        if (count > 0) {
-          const rippleData = new Float32Array(MAX_RIPPLES * 3);
-          const paramData = new Float32Array(MAX_RIPPLES * 3);
+        for (let i = 0; i < ripples.length; i++) {
+          const r = ripples[i];
+          const idx = i * 3;
+          rippleData[idx] = r.x;
+          rippleData[idx + 1] = r.y;
+          rippleData[idx + 2] = r.birth;
 
-          for (let i = 0; i < count; i++) {
-            const r = ripples[i];
-            const idx = i * 3;
-            rippleData[idx] = r.x;
-            rippleData[idx + 1] = r.y;
-            rippleData[idx + 2] = r.birth;
-
-            paramData[idx] = r.intensity;
-            paramData[idx + 1] = r.speed;
-            paramData[idx + 2] = r.wavelength;
-          }
-
-          gl.uniform3fv(uRipples, rippleData);
-          gl.uniform3fv(uRippleParams, paramData);
+          paramData[idx] = r.intensity;
+          paramData[idx + 1] = r.speed;
+          paramData[idx + 2] = r.wavelength;
         }
+
+        gl.uniform3fv(uRipples, rippleData);
+        gl.uniform3fv(uRippleParams, paramData);
 
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       } else if (ctx2d) {
-        // High quality 2D Canvas Fallback
         ctx2d.clearRect(0, 0, canvas.width, canvas.height);
         ctx2d.save();
         ctx2d.scale(dpr, dpr);
@@ -579,46 +490,57 @@
           const age = now - r.birth;
           if (age < 0 || age > 2.2) continue;
 
-          const progress = age / 2.2;
-          const radius = progress * canvasWidth * 0.42;
-          const alpha = (1 - progress) * r.intensity * 12;
+          const currentR = age * r.speed * width * 0.65;
+          const fade = Math.max(0, 1 - (age / 2.2));
 
           ctx2d.beginPath();
-          ctx2d.arc(r.localX, r.localY, radius, 0, Math.PI * 2);
-          ctx2d.lineWidth = 1.8 + progress * 2;
+          ctx2d.arc(r.screenX, r.screenY, currentR, 0, Math.PI * 2);
+          ctx2d.lineWidth = 1.8 + age * 2.5;
 
-          if (dark) {
-            ctx2d.strokeStyle = `rgba(212, 255, 95, ${Math.min(0.85, alpha)})`;
-            ctx2d.shadowColor = 'rgba(212, 255, 95, 0.5)';
-            ctx2d.shadowBlur = 10;
+          if (dark > 0.5) {
+            ctx2d.strokeStyle = `rgba(212, 255, 95, ${fade * r.intensity * 3.5})`;
           } else {
-            ctx2d.strokeStyle = `rgba(20, 140, 122, ${Math.min(0.78, alpha)})`;
-            ctx2d.shadowColor = 'rgba(32, 185, 160, 0.4)';
-            ctx2d.shadowBlur = 10;
+            ctx2d.strokeStyle = `rgba(32, 108, 98, ${fade * r.intensity * 3.0})`;
           }
           ctx2d.stroke();
-          ctx2d.shadowBlur = 0;
         }
-
         ctx2d.restore();
       }
     }
 
     animFrameId = requestAnimationFrame(render);
+  }
 
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        if (animFrameId) {
-          cancelAnimationFrame(animFrameId);
-          animFrameId = null;
-        }
-      } else {
-        if (!animFrameId) {
-          lastTime = performance.now() * 0.001;
-          animFrameId = requestAnimationFrame(render);
-        }
+  // Optimize battery and GPU: pause animation loop when tab is hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
       }
-    });
+    } else {
+      if (!animFrameId) {
+        lastTime = performance.now() * 0.001;
+        ripples.length = 0;
+        animFrameId = requestAnimationFrame(render);
+      }
+    }
+  });
+
+  // Handle WebGL context loss gracefully
+  if (canvas) {
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      useWebGL = false;
+      if (animFrameId) {
+        cancelAnimationFrame(animFrameId);
+        animFrameId = null;
+      }
+    }, false);
+
+    canvas.addEventListener('webglcontextrestored', () => {
+      setupEngine();
+    }, false);
   }
 
   // Sound toggle API
@@ -632,8 +554,13 @@
       return soundEnabled;
     },
     triggerSplash(x, y, intensity = 0.05) {
-      if (soundEnabled) {
-        playWaterDropSound(intensity * 6);
+      if (canvas && heroEl) {
+        const rect = heroEl.getBoundingClientRect();
+        const localX = x - rect.left;
+        const localY = y - rect.top;
+        if (localY >= 0 && localY <= rect.height) {
+          playWaterDropSound(intensity * 8);
+        }
       }
     },
   };
