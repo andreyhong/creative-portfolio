@@ -20,7 +20,7 @@
   const isFinePointer = window.matchMedia('(pointer: fine)').matches;
 
   /* ==========================================================================
-     1. SCROLL PROGRESS BAR & DYNAMIC INTERACTIVE DIAGONAL SLICE MOTION
+     1. SCROLL PROGRESS BAR & INTERACTIVE DIAGONAL DEGREE PIVOT ON SCROLL
      ========================================================================== */
   const progressBar = document.createElement('div');
   progressBar.className = 'scroll-progress-bar';
@@ -28,46 +28,67 @@
   document.body.prepend(progressBar);
   const progressFill = progressBar.querySelector('.scroll-progress-fill');
 
-  let lastScrollY = window.scrollY;
-  let targetSlant = 0;
-  let currentSlant = 0;
-  let slantResetTimer = null;
+  const slantedConfigs = [
+    { selector: '.case-section', maxCut: 4.8, invert: false },
+    { selector: '.assets-showcase', maxCut: 4.5, invert: true },
+    { selector: '.about', maxCut: 5.0, invert: false },
+    { selector: '.contact', maxCut: 5.2, invert: false }
+  ];
 
+  function updateDiagonalAngles() {
+    const vh = window.innerHeight;
+
+    slantedConfigs.forEach(({ selector, maxCut, invert }) => {
+      const el = document.querySelector(selector);
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom < -120 || rect.top > vh + 120) return;
+
+      // Progress: 0 when top enters viewport from bottom, 1 when bottom leaves viewport at top
+      const totalSpan = vh + rect.height;
+      const progress = Math.max(0, Math.min(1, (vh - rect.top) / totalSpan));
+
+      // t pivots from -1 to +1 as you scroll past
+      let t = (progress - 0.5) * 2;
+      if (invert) t = -t;
+
+      // Smooth degree transition:
+      // When entering: positive slope (+degrees)
+      // When centered: 0 (flat horizontal)
+      // When scrolled past: negative slope (-degrees)
+      const slope = -t * maxCut;
+
+      const tl = slope > 0 ? slope : 0;
+      const tr = slope < 0 ? -slope : 0;
+      const br = tl;
+      const bl = tr;
+
+      el.style.setProperty('--cut-tl', `${tl.toFixed(2)}vw`);
+      el.style.setProperty('--cut-tr', `${tr.toFixed(2)}vw`);
+      el.style.setProperty('--cut-br', `${br.toFixed(2)}vw`);
+      el.style.setProperty('--cut-bl', `${bl.toFixed(2)}vw`);
+    });
+  }
+
+  let scrollTicking = false;
   function onScroll() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
     progressFill.style.width = `${progress}%`;
 
-    // Dynamic slant movement:
-    // Scroll naik (up, delta < 0): garis miring bergerak naik (-offset)
-    // Scroll turun (down, delta > 0): garis miring bergerak turun (+offset)
-    const delta = scrollTop - lastScrollY;
-    lastScrollY = scrollTop;
-
-    // Clamped up to ±32px for clear, dynamic, fluid diagonal line motion
-    targetSlant = Math.max(-32, Math.min(32, delta * 0.55));
-
-    clearTimeout(slantResetTimer);
-    slantResetTimer = setTimeout(() => {
-      targetSlant = 0;
-    }, 95);
+    if (!scrollTicking) {
+      requestAnimationFrame(() => {
+        updateDiagonalAngles();
+        scrollTicking = false;
+      });
+      scrollTicking = true;
+    }
   }
   window.addEventListener('scroll', onScroll, { passive: true });
-
-  // 60fps spring loop for smooth recovery and fluid line animation
-  function updateSlantLoop() {
-    currentSlant += (targetSlant - currentSlant) * 0.16;
-
-    if (Math.abs(currentSlant) > 0.08) {
-      document.documentElement.style.setProperty('--slant-offset', `${currentSlant.toFixed(1)}px`);
-    } else if (currentSlant !== 0) {
-      currentSlant = 0;
-      document.documentElement.style.setProperty('--slant-offset', '0px');
-    }
-    requestAnimationFrame(updateSlantLoop);
-  }
-  requestAnimationFrame(updateSlantLoop);
+  window.addEventListener('resize', updateDiagonalAngles, { passive: true });
+  updateDiagonalAngles();
   document.documentElement.style.setProperty('--scroll-skew', '0deg');
 
   /* ==========================================================================
